@@ -1,4 +1,5 @@
 import * as ff from '@google-cloud/functions-framework';
+import { requireRuntimeConfig } from '../config.js';
 import { getGmailClient } from '../gmail/client.js';
 import { getLabelIds, swapLabels } from '../gmail/labelManager.js';
 import {
@@ -8,6 +9,9 @@ import {
 } from '../gmail/fetchEmails.js';
 import { parseEmail } from '../parser/index.js';
 import { createCalendarEvent, eventExists } from '../calendar/createEvent.js';
+
+// module load 時に必須設定を検証（fail-fast）
+requireRuntimeConfig();
 
 interface PubSubData {
   message: {

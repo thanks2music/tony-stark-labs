@@ -23,7 +23,6 @@
     "@anthropic-ai/sdk": "^0.80.0",
     "@google-cloud/functions-framework": "^3.4.0",
     "dayjs": "^1.11.13",
-    "dotenv": "^17.3.1",
     "googleapis": "^144.0.0",
     "zod": "^4.0.0"
   }
