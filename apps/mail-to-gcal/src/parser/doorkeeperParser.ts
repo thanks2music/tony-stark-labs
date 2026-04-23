@@ -53,21 +53,18 @@ function extractDateTime(body: string): {
     throw new Error('Doorkeeperメールから日時を抽出できませんでした');
   }
 
-  const [, year, month, day, startHour, startMin, endHour, endMin] = match;
+  // 固定キャプチャグループ数の regex なので、match 成功時は全要素が string。
+  const [, year, month, day, startHour, startMin, endHour, endMin] = match as [
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+  ];
 
-  if (
-    year === undefined ||
-    month === undefined ||
-    day === undefined ||
-    startHour === undefined ||
-    startMin === undefined ||
-    endHour === undefined ||
-    endMin === undefined
-  ) {
-    throw new Error('Doorkeeperメールの日時マッチに欠損があります');
-  }
-
-  // JST (UTC+9) で Date を構築
   const startDate = new Date(
     `${year}-${month}-${day}T${startHour.padStart(2, '0')}:${startMin}:00+09:00`,
   );

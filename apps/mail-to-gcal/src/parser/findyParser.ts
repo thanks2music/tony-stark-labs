@@ -76,12 +76,7 @@ function extractDateTime(body: string): string {
 }
 
 function extractUrl(body: string): string | undefined {
-  const section = body.split(/■\s*視聴用URL/);
-  const afterMarker = section[1];
-  if (afterMarker === undefined) {
-    return undefined;
-  }
-
-  const urlMatch = afterMarker.match(/https?:\/\/\S+/);
-  return urlMatch?.[0];
+  const idx = body.search(/■\s*視聴用URL/);
+  if (idx < 0) return undefined;
+  return body.slice(idx).match(/https?:\/\/\S+/)?.[0];
 }
