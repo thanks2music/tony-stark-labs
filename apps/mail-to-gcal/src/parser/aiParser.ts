@@ -1,5 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { ParsedEventSchema, type ParsedEvent } from "../types/event.js";
+import Anthropic from '@anthropic-ai/sdk';
+import { ParsedEventSchema, type ParsedEvent } from '../types/event.js';
 
 const client = new Anthropic();
 
@@ -28,23 +28,24 @@ export async function parseWithAI(
   messageId: string,
 ): Promise<ParsedEvent[]> {
   const response = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 1024,
     system: SYSTEM_PROMPT,
     messages: [
       {
-        role: "user",
+        role: 'user',
         content: `件名: ${subject}\n\n本文:\n${body}`,
       },
     ],
   });
 
-  const rawText =
-    response.content[0].type === "text" ? response.content[0].text : "";
+  const firstContent = response.content[0];
+  const rawText = firstContent?.type === 'text' ? firstContent.text : '';
 
   // ```json ... ``` でラップされている場合にJSON部分だけ抽出
   const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const text = jsonMatch ? jsonMatch[1].trim() : rawText.trim();
+  const captured = jsonMatch?.[1];
+  const text = captured !== undefined ? captured.trim() : rawText.trim();
 
   const parsed: unknown[] = JSON.parse(text);
 
@@ -58,7 +59,7 @@ export async function parseWithAI(
       startDateTime: new Date(item.startDateTime).toISOString(),
       durationMinutes: item.durationMinutes || 60,
       url: item.url || undefined,
-      source: "ai",
+      source: 'ai',
       originalSubject: subject,
       messageId,
     }),

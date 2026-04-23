@@ -1,4 +1,4 @@
-import { ParsedEventSchema, type ParsedEvent } from "../types/event.js";
+import { ParsedEventSchema, type ParsedEvent } from '../types/event.js';
 
 /**
  * Doorkeeperの申込確認メールからイベント情報を抽出する。
@@ -25,7 +25,7 @@ export function parseDoorkeeperEmail(
       startDateTime,
       durationMinutes,
       url,
-      source: "doorkeeper",
+      source: 'doorkeeper',
       originalSubject: subject,
       messageId,
     }),
@@ -47,19 +47,29 @@ function extractDateTime(body: string): {
   startDateTime: string;
   durationMinutes: number;
 } {
-  const match = body.match(
-    /(\d{4})-(\d{2})-(\d{2})（.）(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/,
-  );
+  const match = body.match(/(\d{4})-(\d{2})-(\d{2})（.）(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
 
   if (!match) {
-    throw new Error("Doorkeeperメールから日時を抽出できませんでした");
+    throw new Error('Doorkeeperメールから日時を抽出できませんでした');
   }
 
   const [, year, month, day, startHour, startMin, endHour, endMin] = match;
 
+  if (
+    year === undefined ||
+    month === undefined ||
+    day === undefined ||
+    startHour === undefined ||
+    startMin === undefined ||
+    endHour === undefined ||
+    endMin === undefined
+  ) {
+    throw new Error('Doorkeeperメールの日時マッチに欠損があります');
+  }
+
   // JST (UTC+9) で Date を構築
   const startDate = new Date(
-    `${year}-${month}-${day}T${startHour.padStart(2, "0")}:${startMin}:00+09:00`,
+    `${year}-${month}-${day}T${startHour.padStart(2, '0')}:${startMin}:00+09:00`,
   );
 
   const startMinutes = parseInt(startHour) * 60 + parseInt(startMin);
