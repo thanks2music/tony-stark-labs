@@ -1,5 +1,4 @@
 import * as ff from '@google-cloud/functions-framework';
-import type { CloudEventV1 } from 'cloudevents';
 import { getGmailClient } from '../gmail/client.js';
 import { getLabelIds, swapLabels } from '../gmail/labelManager.js';
 import {
@@ -19,7 +18,7 @@ interface PubSubData {
   subscription: string;
 }
 
-ff.cloudEvent<PubSubData>('processEmail', async (ce: CloudEventV1<PubSubData>) => {
+ff.cloudEvent<PubSubData>('processEmail', async (ce: ff.CloudEvent<PubSubData>) => {
   // Pub/Sub メッセージをログ出力（デバッグ用）
   const pubsubData = ce.data?.message?.data;
   if (pubsubData) {
