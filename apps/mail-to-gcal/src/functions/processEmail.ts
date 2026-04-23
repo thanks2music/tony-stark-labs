@@ -10,9 +10,6 @@ import {
 import { parseEmail } from '../parser/index.js';
 import { createCalendarEvent, eventExists } from '../calendar/createEvent.js';
 
-// module load 時に必須設定を検証（fail-fast）
-requireRuntimeConfig();
-
 interface PubSubData {
   message: {
     data: string;
@@ -23,7 +20,9 @@ interface PubSubData {
 }
 
 ff.cloudEvent<PubSubData>('processEmail', async (ce: ff.CloudEvent<PubSubData>) => {
-  // Pub/Sub メッセージをログ出力（デバッグ用）
+  // 初回呼び出し時に必須設定を検証（cold start 時の first invocation で throw）
+  requireRuntimeConfig();
+
   const pubsubData = ce.data?.message?.data;
   if (pubsubData) {
     const decoded: unknown = JSON.parse(Buffer.from(pubsubData, 'base64').toString('utf-8'));
