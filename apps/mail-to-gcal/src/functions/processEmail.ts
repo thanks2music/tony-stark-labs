@@ -1,14 +1,14 @@
-import * as ff from "@google-cloud/functions-framework";
-import type { CloudEventV1 } from "cloudevents";
-import { getGmailClient } from "../gmail/client.js";
-import { getLabelIds, swapLabels } from "../gmail/labelManager.js";
+import * as ff from '@google-cloud/functions-framework';
+import type { CloudEventV1 } from 'cloudevents';
+import { getGmailClient } from '../gmail/client.js';
+import { getLabelIds, swapLabels } from '../gmail/labelManager.js';
 import {
   fetchUnprocessedEmails,
   extractPlainTextBody,
   extractHeader,
-} from "../gmail/fetchEmails.js";
-import { parseEmail } from "../parser/index.js";
-import { createCalendarEvent, eventExists } from "../calendar/createEvent.js";
+} from '../gmail/fetchEmails.js';
+import { parseEmail } from '../parser/index.js';
+import { createCalendarEvent, eventExists } from '../calendar/createEvent.js';
 
 interface PubSubData {
   message: {
@@ -19,14 +19,12 @@ interface PubSubData {
   subscription: string;
 }
 
-ff.cloudEvent<PubSubData>("processEmail", async (ce: CloudEventV1<PubSubData>) => {
+ff.cloudEvent<PubSubData>('processEmail', async (ce: CloudEventV1<PubSubData>) => {
   // Pub/Sub メッセージをログ出力（デバッグ用）
   const pubsubData = ce.data?.message?.data;
   if (pubsubData) {
-    const decoded = JSON.parse(
-      Buffer.from(pubsubData, "base64").toString("utf-8"),
-    );
-    console.log("Gmail通知受信:", decoded);
+    const decoded: unknown = JSON.parse(Buffer.from(pubsubData, 'base64').toString('utf-8'));
+    console.log('Gmail通知受信:', decoded);
   }
 
   const gmail = getGmailClient();
@@ -40,16 +38,14 @@ ff.cloudEvent<PubSubData>("processEmail", async (ce: CloudEventV1<PubSubData>) =
     const messageId = message.id!;
 
     try {
-      const from = extractHeader(message, "From");
-      const subject = extractHeader(message, "Subject");
+      const from = extractHeader(message, 'From');
+      const subject = extractHeader(message, 'Subject');
       const body = extractPlainTextBody(message);
 
       // パース（未対応の送信元はスキップ）
       const parsedEvents = await parseEmail(from, subject, body, messageId);
       if (!parsedEvents || parsedEvents.length === 0) {
-        console.warn(
-          `未対応の送信元: ${from} — メッセージ ${messageId} をスキップ`,
-        );
+        console.warn(`未対応の送信元: ${from} — メッセージ ${messageId} をスキップ`);
         continue;
       }
 
@@ -57,9 +53,7 @@ ff.cloudEvent<PubSubData>("processEmail", async (ce: CloudEventV1<PubSubData>) =
       for (const parsed of parsedEvents) {
         // カレンダー重複チェック
         if (await eventExists(parsed)) {
-          console.log(
-            `イベント既存: "${parsed.title}" — スキップ`,
-          );
+          console.log(`イベント既存: "${parsed.title}" — スキップ`);
           continue;
         }
 

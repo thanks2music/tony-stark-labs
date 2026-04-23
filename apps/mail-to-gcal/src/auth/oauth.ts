@@ -1,4 +1,4 @@
-import { google } from "googleapis";
+import { google } from 'googleapis';
 
 interface OAuthCredentials {
   client_id: string;
@@ -18,10 +18,10 @@ export function getAuthClient(): InstanceType<typeof google.auth.OAuth2> {
 
   const raw = process.env.OAUTH_CREDENTIALS;
   if (!raw) {
-    throw new Error("OAUTH_CREDENTIALS 環境変数が設定されていません");
+    throw new Error('OAUTH_CREDENTIALS 環境変数が設定されていません');
   }
 
-  const creds: OAuthCredentials = JSON.parse(raw);
+  const creds = JSON.parse(raw) as OAuthCredentials;
   const auth = new google.auth.OAuth2(creds.client_id, creds.client_secret);
   auth.setCredentials({ refresh_token: creds.refresh_token });
 
