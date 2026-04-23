@@ -24,10 +24,5 @@
     "dotenv": "^17.3.1",
     "googleapis": "^144.0.0",
     "zod": "^4.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.7.0",
-    "vitest": "^3.0.0"
   }
 }
