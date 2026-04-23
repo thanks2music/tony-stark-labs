@@ -1,5 +1,7 @@
 # Spec 001: `apps/mail-to-gcal` monorepo 取り込み (Phase 1a)
 
+Next phase: [specs/002-mail-to-gcal-gcp-migration/spec.md](../002-mail-to-gcal-gcp-migration/spec.md)
+
 ## 目的
 
 独立リポジトリ `mail-to-google-calendar`（Gmail → Google Calendar 自動登録、GCF 2nd gen, Node.js 22）を tony-stark-labs monorepo の `apps/mail-to-gcal/` として取り込み、Bun workspaces + Turborepo ツールチェーン下で `bun run --filter` 経由の lint / typecheck / test が可能な状態にする。既存本番 (`wao-event-automation` プロジェクト) には一切触らない。
