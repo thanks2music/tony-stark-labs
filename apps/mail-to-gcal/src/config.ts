@@ -64,11 +64,12 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Env {
 }
 
 /**
- * Cloud Functions エントリポイントの module load 時に呼び、本番稼働に必須の設定を fail-fast する。
- * `loadConfig()` は loader 層で optional のフィールドを許容するため、runtime 起動時の検証は別途必要。
+ * Cloud Functions handler の先頭で呼び、本番稼働に必須の設定を fail-fast する。
+ * `loadConfig()` は loader 層で optional のフィールドを許容するため、runtime 検証は別途必要。
+ * `source` を渡すとテスト時に process.env を touch せずに検証できる。
  */
-export function requireRuntimeConfig(): Env {
-  const cfg = loadConfig();
+export function requireRuntimeConfig(source?: NodeJS.ProcessEnv): Env {
+  const cfg = loadConfig(source);
   if (!cfg.OAUTH_CREDENTIALS) {
     throw new Error('OAUTH_CREDENTIALS 環境変数が設定されていません（起動中断）');
   }

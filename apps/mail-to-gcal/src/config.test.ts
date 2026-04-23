@@ -84,28 +84,15 @@ describe('requireRuntimeConfig', () => {
   });
 
   it('OAUTH_CREDENTIALS が設定されていれば cfg を返す', () => {
-    const original = process.env.OAUTH_CREDENTIALS;
-    process.env.OAUTH_CREDENTIALS = VALID_OAUTH;
-    try {
-      const cfg = requireRuntimeConfig();
-      expect(cfg.OAUTH_CREDENTIALS).toEqual({
-        client_id: 'cid',
-        client_secret: 'csec',
-        refresh_token: 'rtoken',
-      });
-    } finally {
-      if (original === undefined) delete process.env.OAUTH_CREDENTIALS;
-      else process.env.OAUTH_CREDENTIALS = original;
-    }
+    const cfg = requireRuntimeConfig({ OAUTH_CREDENTIALS: VALID_OAUTH });
+    expect(cfg.OAUTH_CREDENTIALS).toEqual({
+      client_id: 'cid',
+      client_secret: 'csec',
+      refresh_token: 'rtoken',
+    });
   });
 
   it('OAUTH_CREDENTIALS が未設定なら throw する', () => {
-    const original = process.env.OAUTH_CREDENTIALS;
-    delete process.env.OAUTH_CREDENTIALS;
-    try {
-      expect(() => requireRuntimeConfig()).toThrow(/OAUTH_CREDENTIALS/);
-    } finally {
-      if (original !== undefined) process.env.OAUTH_CREDENTIALS = original;
-    }
+    expect(() => requireRuntimeConfig({})).toThrow(/OAUTH_CREDENTIALS/);
   });
 });
