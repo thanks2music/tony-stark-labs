@@ -1,7 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { z } from 'zod';
 import { loadConfig } from '../config.js';
 import { ParsedEventSchema, type ParsedEvent } from '../types/event.js';
 
+// vi.mock は hoisting されるため、トップレベルで new Anthropic() するとテスト時の差し替えより早く評価される。
 let client: Anthropic | null = null;
 
 function getClient(): Anthropic {
@@ -10,6 +12,14 @@ function getClient(): Anthropic {
   }
   return client;
 }
+
+const AIItemSchema = z.object({
+  title: z.string().min(1),
+  startDateTime: z.string().min(1),
+  durationMinutes: z.number().optional(),
+  url: z.string().optional(),
+});
+const AIArraySchema = z.array(AIItemSchema);
 
 const SYSTEM_PROMPT = `あなたはメールからイベント情報を抽出するアシスタントです。
 メールの件名と本文から、以下の情報をJSON配列として抽出してください。
@@ -52,21 +62,16 @@ export async function parseWithAI(
 
   // ```json ... ``` でラップされている場合にJSON部分だけ抽出
   const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const captured = jsonMatch?.[1];
-  const text = captured !== undefined ? captured.trim() : rawText.trim();
+  const text = (jsonMatch?.[1] ?? rawText).trim();
 
-  const parsed: unknown[] = JSON.parse(text);
+  const items = AIArraySchema.parse(JSON.parse(text));
 
-  if (!Array.isArray(parsed) || parsed.length === 0) {
-    return [];
-  }
-
-  return parsed.map((item: any) =>
+  return items.map((item) =>
     ParsedEventSchema.parse({
       title: item.title,
       startDateTime: new Date(item.startDateTime).toISOString(),
-      durationMinutes: item.durationMinutes || 60,
-      url: item.url || undefined,
+      durationMinutes: item.durationMinutes ?? 60,
+      url: item.url,
       source: 'ai',
       originalSubject: subject,
       messageId,

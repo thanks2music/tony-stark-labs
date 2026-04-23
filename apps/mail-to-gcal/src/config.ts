@@ -1,11 +1,36 @@
 import { z } from 'zod';
 
+const OAuthCredentialsSchema = z.object({
+  client_id: z.string().min(1),
+  client_secret: z.string().min(1),
+  refresh_token: z.string().min(1),
+});
+
+export type OAuthCredentials = z.infer<typeof OAuthCredentialsSchema>;
+
+const OAuthCredentialsEnv = z
+  .string()
+  .min(1)
+  .transform((raw, ctx): unknown => {
+    try {
+      return JSON.parse(raw);
+    } catch (e) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `JSON として解釈できません: ${e instanceof Error ? e.message : String(e)}`,
+      });
+      return z.NEVER;
+    }
+  })
+  .pipe(OAuthCredentialsSchema)
+  .optional();
+
 const EnvSchema = z.object({
   GCP_PROJECT_ID: z.string().min(1).default('wao-event-automation'),
   PUBSUB_TOPIC: z.string().min(1).default('gmail-notifications'),
   GOOGLE_CALENDAR_ID: z.string().min(1).default('primary'),
   // OAUTH_CREDENTIALS は auth/oauth.ts 実行時に required。テスト中の parser は不要なので loader 層では optional。
-  OAUTH_CREDENTIALS: z.string().min(1).optional(),
+  OAUTH_CREDENTIALS: OAuthCredentialsEnv,
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
 });
 

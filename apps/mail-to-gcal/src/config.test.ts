@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { loadConfig, resetConfigForTesting } from './config.js';
 
+const VALID_OAUTH = JSON.stringify({
+  client_id: 'cid',
+  client_secret: 'csec',
+  refresh_token: 'rtoken',
+});
+
 describe('loadConfig', () => {
   beforeEach(() => {
     resetConfigForTesting();
@@ -15,9 +21,21 @@ describe('loadConfig', () => {
     expect(cfg.ANTHROPIC_API_KEY).toBeUndefined();
   });
 
-  it('OAUTH_CREDENTIALS は optional: 設定されていれば読める', () => {
-    const cfg = loadConfig({ OAUTH_CREDENTIALS: '{}' });
-    expect(cfg.OAUTH_CREDENTIALS).toBe('{}');
+  it('OAUTH_CREDENTIALS を JSON として validate してパース済みオブジェクトを返す', () => {
+    const cfg = loadConfig({ OAUTH_CREDENTIALS: VALID_OAUTH });
+    expect(cfg.OAUTH_CREDENTIALS).toEqual({
+      client_id: 'cid',
+      client_secret: 'csec',
+      refresh_token: 'rtoken',
+    });
+  });
+
+  it('OAUTH_CREDENTIALS が壊れた JSON の場合は起動に失敗する', () => {
+    expect(() => loadConfig({ OAUTH_CREDENTIALS: 'not-json' })).toThrow(/OAUTH_CREDENTIALS/);
+  });
+
+  it('OAUTH_CREDENTIALS に必須フィールドが欠けている場合は起動に失敗する', () => {
+    expect(() => loadConfig({ OAUTH_CREDENTIALS: '{}' })).toThrow(/OAUTH_CREDENTIALS/);
   });
 
   it('ANTHROPIC_API_KEY をセットすると読み取れる', () => {
@@ -36,7 +54,7 @@ describe('loadConfig', () => {
     expect(cfg.GOOGLE_CALENDAR_ID).toBe('my-cal@group.calendar.google.com');
   });
 
-  it('空文字列の GOOGLE_CALENDAR_ID は z.string().min(1) で throw する', () => {
+  it('GOOGLE_CALENDAR_ID に空文字列が渡された場合は起動に失敗する', () => {
     expect(() => loadConfig({ GOOGLE_CALENDAR_ID: '' })).toThrow(/GOOGLE_CALENDAR_ID/);
   });
 });
