@@ -1,7 +1,7 @@
-import type { gmail_v1 } from "googleapis";
+import type { gmail_v1 } from 'googleapis';
 
-const LABEL_ADD_TO_CALENDAR = "AddToCalendar";
-const LABEL_CALENDAR_ADDED = "CalendarAdded";
+const LABEL_ADD_TO_CALENDAR = 'AddToCalendar';
+const LABEL_CALENDAR_ADDED = 'CalendarAdded';
 
 export interface LabelIds {
   addToCalendarId: string;
@@ -17,23 +17,19 @@ let cachedLabelIds: LabelIds | null = null;
 export async function getLabelIds(gmail: gmail_v1.Gmail): Promise<LabelIds> {
   if (cachedLabelIds) return cachedLabelIds;
 
-  const res = await gmail.users.labels.list({ userId: "me" });
+  const res = await gmail.users.labels.list({ userId: 'me' });
   const labels = res.data.labels ?? [];
 
-  let addToCalendarId = labels.find(
-    (l) => l.name === LABEL_ADD_TO_CALENDAR,
-  )?.id;
-  let calendarAddedId = labels.find(
-    (l) => l.name === LABEL_CALENDAR_ADDED,
-  )?.id;
+  let addToCalendarId = labels.find((l) => l.name === LABEL_ADD_TO_CALENDAR)?.id;
+  let calendarAddedId = labels.find((l) => l.name === LABEL_CALENDAR_ADDED)?.id;
 
   if (!addToCalendarId) {
     const created = await gmail.users.labels.create({
-      userId: "me",
+      userId: 'me',
       requestBody: {
         name: LABEL_ADD_TO_CALENDAR,
-        labelListVisibility: "labelShow",
-        messageListVisibility: "show",
+        labelListVisibility: 'labelShow',
+        messageListVisibility: 'show',
       },
     });
     addToCalendarId = created.data.id!;
@@ -42,11 +38,11 @@ export async function getLabelIds(gmail: gmail_v1.Gmail): Promise<LabelIds> {
 
   if (!calendarAddedId) {
     const created = await gmail.users.labels.create({
-      userId: "me",
+      userId: 'me',
       requestBody: {
         name: LABEL_CALENDAR_ADDED,
-        labelListVisibility: "labelShow",
-        messageListVisibility: "show",
+        labelListVisibility: 'labelShow',
+        messageListVisibility: 'show',
       },
     });
     calendarAddedId = created.data.id!;
@@ -66,7 +62,7 @@ export async function swapLabels(
   labelIds: LabelIds,
 ): Promise<void> {
   await gmail.users.messages.modify({
-    userId: "me",
+    userId: 'me',
     id: messageId,
     requestBody: {
       addLabelIds: [labelIds.calendarAddedId],

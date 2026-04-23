@@ -5,11 +5,11 @@
 
 ## 対応状況
 
-| サービス | 対応状況 |
-| --- | --- |
-| Findy | 対応予定（ミニマム実装の対象） |
-| Connpass | 未対応 |
-| EventHub | 未対応 |
+| サービス | 対応状況                       |
+| -------- | ------------------------------ |
+| Findy    | 対応予定（ミニマム実装の対象） |
+| Connpass | 未対応                         |
+| EventHub | 未対応                         |
 
 ## システム概要
 
@@ -40,10 +40,10 @@ Gmail API の `watch()` を使ったイベント駆動アーキテクチャを�
 
 ### Gmailラベル設計
 
-| ラベル名 | 用途 |
-| --- | --- |
+| ラベル名        | 用途                                                                             |
+| --------------- | -------------------------------------------------------------------------------- |
 | `AddToCalendar` | Gmailフィルタにより自動付与。このラベルが付いたメールが `watch()` のトリガー対象 |
-| `CalendarAdded` | Cloud Functions が処理完了後に付与。重複登録の防止に使用 |
+| `CalendarAdded` | Cloud Functions が処理完了後に付与。重複登録の防止に使用                         |
 
 処理の流れ: メール受信 → `AddToCalendar` 自動付与 → `watch()` が検知 → 処理 → `AddToCalendar` を除去し `CalendarAdded` を付与
 
@@ -51,11 +51,11 @@ Gmail API の `watch()` を使ったイベント駆動アーキテクチャを�
 
 Gmailの設定画面で以下のフィルタを作成する。将来サービスを追加する際は、フィルタを追加するだけでよい。
 
-| サービス | フィルタ条件 | アクション |
-| --- | --- | --- |
-| Findy | `from:support@findy-code.io subject:イベントに関するメッセージ` | `AddToCalendar` ラベルを付与 |
-| Connpass | （将来追加予定） | `AddToCalendar` ラベルを付与 |
-| EventHub | （将来追加予定） | `AddToCalendar` ラベルを付与 |
+| サービス | フィルタ条件                                                    | アクション                   |
+| -------- | --------------------------------------------------------------- | ---------------------------- |
+| Findy    | `from:support@findy-code.io subject:イベントに関するメッセージ` | `AddToCalendar` ラベルを付与 |
+| Connpass | （将来追加予定）                                                | `AddToCalendar` ラベルを付与 |
+| EventHub | （将来追加予定）                                                | `AddToCalendar` ラベルを付与 |
 
 ### watch() の再登録
 
@@ -100,12 +100,12 @@ Findyからのイベント申し込み確認メールは以下のような構造
 
 ### 抽出対象
 
-| 項目 | 抽出方法 |
-| --- | --- |
-| イベント名 | 「■ イベント名」の次行 |
-| 開催日時 | 「■ 開催日時」の次行（正規表現で年月日時分を抽出） |
-| 視聴用URL | 「■ 視聴用URL」の次行 |
-| 補足情報 | 「・」で始まる行を収集 |
+| 項目       | 抽出方法                                           |
+| ---------- | -------------------------------------------------- |
+| イベント名 | 「■ イベント名」の次行                             |
+| 開催日時   | 「■ 開催日時」の次行（正規表現で年月日時分を抽出） |
+| 視聴用URL  | 「■ 視聴用URL」の次行                              |
+| 補足情報   | 「・」で始まる行を収集                             |
 
 ## Googleカレンダー登録内容
 
@@ -120,20 +120,20 @@ Findyからのイベント申し込み確認メールは以下のような構造
 
 ## 技術スタック
 
-| 項目 | 選定 | 理由 |
-| --- | --- | --- |
-| ランタイム | Node.js 22 + TypeScript | 開発者の得意技術 |
-| 実行環境 | Cloud Functions (2nd gen) | Cloud Runベース。Pub/Subトリガーに対応 |
-| メイン トリガー | Cloud Pub/Sub | Gmail API `watch()` からの通知で起動。イベント駆動 |
-| watch再登録 | Cloud Scheduler（1日1回） | `watch()` の7日間失効対策 |
-| Gmail操作 | googleapis (`gmail.users.messages`, `gmail.users.watch`) | Google公式SDK |
-| Calendar操作 | googleapis (`calendar.events.insert`) | Google公式SDK |
-| 認証 | OAuth 2.0 + Refresh Token | 個人Gmailアカウントのためサービスアカウント不可 |
-| メールパース | 正規表現 | Findyのメールは構造が明確なので十分 |
-| 日時パース | dayjs | 軽量で日本語日時のパースに対応しやすい |
-| バリデーション | Zod | パース結果の型安全な検証 |
-| 状態管理 | Gmailラベル | `AddToCalendar`（未処理）→ `CalendarAdded`（処理済み）。別途DB不要 |
-| パッケージマネージャ | Bun | 開発者の普段の環境に合わせて |
+| 項目                 | 選定                                                     | 理由                                                               |
+| -------------------- | -------------------------------------------------------- | ------------------------------------------------------------------ |
+| ランタイム           | Node.js 22 + TypeScript                                  | 開発者の得意技術                                                   |
+| 実行環境             | Cloud Functions (2nd gen)                                | Cloud Runベース。Pub/Subトリガーに対応                             |
+| メイン トリガー      | Cloud Pub/Sub                                            | Gmail API `watch()` からの通知で起動。イベント駆動                 |
+| watch再登録          | Cloud Scheduler（1日1回）                                | `watch()` の7日間失効対策                                          |
+| Gmail操作            | googleapis (`gmail.users.messages`, `gmail.users.watch`) | Google公式SDK                                                      |
+| Calendar操作         | googleapis (`calendar.events.insert`)                    | Google公式SDK                                                      |
+| 認証                 | OAuth 2.0 + Refresh Token                                | 個人Gmailアカウントのためサービスアカウント不可                    |
+| メールパース         | 正規表現                                                 | Findyのメールは構造が明確なので十分                                |
+| 日時パース           | dayjs                                                    | 軽量で日本語日時のパースに対応しやすい                             |
+| バリデーション       | Zod                                                      | パース結果の型安全な検証                                           |
+| 状態管理             | Gmailラベル                                              | `AddToCalendar`（未処理）→ `CalendarAdded`（処理済み）。別途DB不要 |
+| パッケージマネージャ | Bun                                                      | 開発者の普段の環境に合わせて                                       |
 
 ## 認証について
 
@@ -141,13 +141,13 @@ Findyからのイベント申し込み確認メールは以下のような構造
 
 ## GCPリソース構成
 
-| リソース | 用途 |
-| --- | --- |
-| Cloud Functions `processEmail` | Pub/Sub トリガー。メールパース → カレンダー登録 |
-| Cloud Functions `renewWatch` | HTTP トリガー。Gmail API `watch()` の再登録 |
-| Cloud Pub/Sub トピック `gmail-notifications` | Gmail API `watch()` の通知先 |
-| Cloud Scheduler ジョブ `renew-gmail-watch` | 1日1回 `renewWatch` を呼び出し |
-| Secret Manager | OAuth Refresh Token の保管 |
+| リソース                                     | 用途                                            |
+| -------------------------------------------- | ----------------------------------------------- |
+| Cloud Functions `processEmail`               | Pub/Sub トリガー。メールパース → カレンダー登録 |
+| Cloud Functions `renewWatch`                 | HTTP トリガー。Gmail API `watch()` の再登録     |
+| Cloud Pub/Sub トピック `gmail-notifications` | Gmail API `watch()` の通知先                    |
+| Cloud Scheduler ジョブ `renew-gmail-watch`   | 1日1回 `renewWatch` を呼び出し                  |
+| Secret Manager                               | OAuth Refresh Token の保管                      |
 
 ## プロジェクト構成
 

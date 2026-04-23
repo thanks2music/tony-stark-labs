@@ -18,10 +18,9 @@ https://findy-code.io/events/GkgB56I9Du3nH
 メールの配信停止は設定ページより行えます。（重要なメールは通知されます）
 IT/Webエンジニアの転職サービス Findy`,
   expected: {
-    title:
-      "体験談で学ぶ各社のオンボーディング ～新メンバーを支える現場の工夫～",
-    startDateTime: "2026-04-07T03:00:00.000Z", // 12:00 JST = 03:00 UTC
-    url: "https://findy-code.io/events/GkgB56I9Du3nH",
+    title: '体験談で学ぶ各社のオンボーディング ～新メンバーを支える現場の工夫～',
+    startDateTime: '2026-04-07T03:00:00.000Z', // 12:00 JST = 03:00 UTC
+    url: 'https://findy-code.io/events/GkgB56I9Du3nH',
   },
 };
 
@@ -45,9 +44,9 @@ https://findy-code.io/events/jc9X5nZEMulN2
 * メールの配信停止は設定ページより行えます。（重要なメールは通知されます）
 IT/Webエンジニアの転職サービス Findy`,
   expected: {
-    title: "Claude Code Skills実践！ - 業務を効率化する活用事例",
-    startDateTime: "2026-04-09T03:00:00.000Z",
-    url: "https://findy-code.io/events/jc9X5nZEMulN2",
+    title: 'Claude Code Skills実践！ - 業務を効率化する活用事例',
+    startDateTime: '2026-04-09T03:00:00.000Z',
+    url: 'https://findy-code.io/events/jc9X5nZEMulN2',
   },
 };
 
@@ -71,9 +70,8 @@ https://findy-code.io/events/0wCnwhfV8wlqj
 * メールの配信停止は設定ページより行えます。（重要なメールは通知されます）
 IT/Webエンジニアの転職サービス Findy`,
   expected: {
-    title:
-      "あなたのdotfilesを教えて！~開発生産性が上がった環境、どう作ってる？~",
-    startDateTime: "2026-04-02T03:00:00.000Z",
-    url: "https://findy-code.io/events/0wCnwhfV8wlqj",
+    title: 'あなたのdotfilesを教えて！~開発生産性が上がった環境、どう作ってる？~',
+    startDateTime: '2026-04-02T03:00:00.000Z',
+    url: 'https://findy-code.io/events/0wCnwhfV8wlqj',
   },
 };
