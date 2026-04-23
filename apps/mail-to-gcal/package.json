@@ -1,0 +1,33 @@
+{
+  "name": "mail-to-google-calendar",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/functions/index.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "gcp-build": "",
+    "dev": "tsc --watch",
+    "start": "npx functions-framework --target=processEmail --signature-type=cloudevent",
+    "start:renew": "npx functions-framework --target=renewWatch --signature-type=http --port=8081 --source=dist/functions/renewWatch.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "deploy:process": "gcloud functions deploy processEmail --gen2 --runtime=nodejs22 --region=asia-northeast1 --trigger-topic=gmail-notifications --entry-point=processEmail --source=. --memory=256Mi --timeout=60s --set-secrets=OAUTH_CREDENTIALS=oauth-credentials:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest --set-env-vars=GOOGLE_CALENDAR_ID=<YOUR_CALENDAR_ID>@group.calendar.google.com",
+    "deploy:renew": "gcloud functions deploy renewWatch --gen2 --runtime=nodejs22 --region=asia-northeast1 --trigger-http --no-allow-unauthenticated --entry-point=renewWatch --source=. --memory=256Mi --timeout=30s --set-secrets=OAUTH_CREDENTIALS=oauth-credentials:latest"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
+    "@google-cloud/functions-framework": "^3.4.0",
+    "dayjs": "^1.11.13",
+    "dotenv": "^17.3.1",
+    "googleapis": "^144.0.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
