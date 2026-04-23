@@ -1,12 +1,5 @@
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
-import timezone from 'dayjs/plugin/timezone.js';
-import customParseFormat from 'dayjs/plugin/customParseFormat.js';
+import { dayjs } from '../lib/dayjs.js';
 import { ParsedEventSchema, type ParsedEvent } from '../types/event.js';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.extend(customParseFormat);
 
 /**
  * Findyのイベント申込確認メールをパースし、イベント情報を抽出する。

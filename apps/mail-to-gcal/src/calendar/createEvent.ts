@@ -1,13 +1,8 @@
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
-import timezone from 'dayjs/plugin/timezone.js';
 import type { calendar_v3 } from 'googleapis';
 import { getCalendarClient } from './client.js';
 import { loadConfig } from '../config.js';
+import { dayjs } from '../lib/dayjs.js';
 import { SOURCE_LABELS, type ParsedEvent } from '../types/event.js';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 /**
  * パース済みイベント情報からGoogleカレンダーにイベントを作成する。
@@ -58,7 +53,7 @@ export async function eventExists(event: ParsedEvent): Promise<boolean> {
     timeMin: startDt.subtract(1, 'minute').toISOString(),
     timeMax: startDt.add(1, 'minute').toISOString(),
     q: event.title,
-    maxResults: 5,
+    maxResults: 1,
   });
 
   return (res.data.items?.length ?? 0) > 0;
