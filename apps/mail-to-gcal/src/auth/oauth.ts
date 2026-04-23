@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { loadConfig } from '../config.js';
 
 interface OAuthCredentials {
   client_id: string;
@@ -16,11 +17,10 @@ let cachedAuth: InstanceType<typeof google.auth.OAuth2> | null = null;
 export function getAuthClient(): InstanceType<typeof google.auth.OAuth2> {
   if (cachedAuth) return cachedAuth;
 
-  const raw = process.env.OAUTH_CREDENTIALS;
+  const raw = loadConfig().OAUTH_CREDENTIALS;
   if (!raw) {
     throw new Error('OAUTH_CREDENTIALS 環境変数が設定されていません');
   }
-
   const creds = JSON.parse(raw) as OAuthCredentials;
   const auth = new google.auth.OAuth2(creds.client_id, creds.client_secret);
   auth.setCredentials({ refresh_token: creds.refresh_token });

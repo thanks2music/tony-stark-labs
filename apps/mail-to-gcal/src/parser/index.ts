@@ -1,17 +1,14 @@
-import { parseFindyEmail } from "./findyParser.js";
-import { parseDoorkeeperEmail } from "./doorkeeperParser.js";
-import { parseWithAI } from "./aiParser.js";
-import type { ParsedEvent } from "../types/event.js";
+import { parseFindyEmail } from './findyParser.js';
+import { parseDoorkeeperEmail } from './doorkeeperParser.js';
+import { parseWithAI } from './aiParser.js';
+import { loadConfig } from '../config.js';
+import type { ParsedEvent } from '../types/event.js';
 
-type EmailParser = (
-  subject: string,
-  body: string,
-  messageId: string,
-) => ParsedEvent[];
+type EmailParser = (subject: string, body: string, messageId: string) => ParsedEvent[];
 
 const PARSER_MAP: Record<string, EmailParser> = {
-  "support@findy-code.io": parseFindyEmail,
-  "info@doorkeeper.jp": parseDoorkeeperEmail,
+  'support@findy-code.io': parseFindyEmail,
+  'info@doorkeeper.jp': parseDoorkeeperEmail,
 };
 
 /**
@@ -35,7 +32,7 @@ export async function parseEmail(
   }
 
   // AIフォールバック（ANTHROPIC_API_KEY が設定されている場合のみ）
-  if (process.env.ANTHROPIC_API_KEY) {
+  if (loadConfig().ANTHROPIC_API_KEY) {
     console.log(`AIフォールバックパーサーを使用: ${email}`);
     return parseWithAI(subject, body, messageId);
   }

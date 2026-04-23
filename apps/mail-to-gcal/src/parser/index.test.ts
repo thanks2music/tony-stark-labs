@@ -1,9 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { parseEmail } from './index.js';
+import { resetConfigForTesting } from '../config.js';
 import { FINDY_SAMPLE_1 } from './__fixtures__/findySamples.js';
 import { DOORKEEPER_SAMPLE_1 } from './__fixtures__/doorkeeperSamples.js';
 
 describe('parseEmail', () => {
+  beforeEach(() => {
+    resetConfigForTesting();
+  });
+
   it('Findyの送信元アドレスに対してパーサーを実行する', async () => {
     const result = await parseEmail(
       'support@findy-code.io',
@@ -59,11 +64,13 @@ describe('parseEmail', () => {
   it('未対応の送信元にはnullを返す（ANTHROPIC_API_KEY未設定時）', async () => {
     const originalKey = process.env.ANTHROPIC_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;
+    resetConfigForTesting();
 
     const result = await parseEmail('unknown@example.com', '件名', '本文', 'msg-3');
 
     expect(result).toBeNull();
 
     if (originalKey) process.env.ANTHROPIC_API_KEY = originalKey;
+    resetConfigForTesting();
   });
 });

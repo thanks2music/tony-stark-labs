@@ -1,7 +1,15 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { loadConfig } from '../config.js';
 import { ParsedEventSchema, type ParsedEvent } from '../types/event.js';
 
-const client = new Anthropic();
+let client: Anthropic | null = null;
+
+function getClient(): Anthropic {
+  if (!client) {
+    client = new Anthropic({ apiKey: loadConfig().ANTHROPIC_API_KEY });
+  }
+  return client;
+}
 
 const SYSTEM_PROMPT = `あなたはメールからイベント情報を抽出するアシスタントです。
 メールの件名と本文から、以下の情報をJSON配列として抽出してください。
@@ -27,7 +35,7 @@ export async function parseWithAI(
   body: string,
   messageId: string,
 ): Promise<ParsedEvent[]> {
-  const response = await client.messages.create({
+  const response = await getClient().messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 1024,
     system: SYSTEM_PROMPT,
