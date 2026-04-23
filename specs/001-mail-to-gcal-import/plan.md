@@ -13,7 +13,9 @@ const EnvSchema = z.object({
   GCP_PROJECT_ID: z.string().min(1).default('wao-event-automation'),
   PUBSUB_TOPIC: z.string().min(1).default('gmail-notifications'),
   GOOGLE_CALENDAR_ID: z.string().min(1).default('primary'),
-  OAUTH_CREDENTIALS: z.string().min(1),
+  // OAUTH_CREDENTIALS は auth/oauth.ts 実行時に required。loader 層では optional にし、
+  // 使用箇所で明示 require することで parser 単独テストの実行性を保つ
+  OAUTH_CREDENTIALS: z.string().min(1).optional(),
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
 });
 ```
@@ -81,10 +83,11 @@ root `tsconfig.base.json` は `module: es2022 + moduleResolution: bundler`。GCF
 
 ## リスクと緩和策
 
-| リスク                                                                    | 緩和策                                                                      |
-| ------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| 漏洩鍵のローテ未完了のまま取り込みを進める                                | Phase 1a の prerequisite として鍵ローテ完了を定義。DoD チェックリストで明示 |
-| `verbatimModuleSyntax` / `noUncheckedIndexedAccess` で typecheck が落ちる | Step 7 の fix commit で一括対応、意味的変更なし                             |
-| `parser/index.test.ts` の `process.env` 直接操作が config cache と衝突    | `beforeEach(resetConfigForTesting)` で対応                                  |
-| subtree add 実行時の `--squash` 忘れ                                      | コマンド例をそのまま貼り付けて実行、履歴確認で 1 commit 化を確認            |
-| 既存 `wao-event-automation` 本番への影響                                  | Phase 1a では `gcloud functions deploy` を一切実行しない                    |
+| リスク                                                                    | 緩和策                                                           |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `verbatimModuleSyntax` / `noUncheckedIndexedAccess` で typecheck が落ちる | Step 7-9 の fix commit で対応、意味的変更なし                    |
+| cloudevents が bun isolated linker で phantom dep になり参照不可          | 直接 `dependencies` に追加（Step 5 commit）                      |
+| `parser/index.test.ts` の `process.env` 直接操作が config cache と衝突    | `beforeEach(resetConfigForTesting)` で対応                       |
+| `loadConfig` の OAUTH_CREDENTIALS required 化でテスト実行性が下がる       | Zod では optional、使用箇所（`auth/oauth.ts`）で明示 require     |
+| subtree add 実行時の `--squash` 忘れ                                      | コマンド例をそのまま貼り付けて実行、履歴確認で 1 commit 化を確認 |
+| 既存 `wao-event-automation` 本番への影響                                  | Phase 1a では `gcloud functions deploy` を一切実行しない         |
