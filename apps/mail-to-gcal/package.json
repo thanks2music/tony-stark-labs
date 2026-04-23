@@ -1,6 +1,7 @@
 {
-  "name": "mail-to-google-calendar",
+  "name": "mail-to-gcal",
   "version": "0.1.0",
+  "private": true,
   "type": "module",
   "main": "dist/functions/index.js",
   "engines": {
@@ -8,10 +9,11 @@
   },
   "scripts": {
     "build": "tsc",
-    "gcp-build": "",
     "dev": "tsc --watch",
-    "start": "npx functions-framework --target=processEmail --signature-type=cloudevent",
-    "start:renew": "npx functions-framework --target=renewWatch --signature-type=http --port=8081 --source=dist/functions/renewWatch.js",
+    "start": "functions-framework --target=processEmail --signature-type=cloudevent",
+    "start:renew": "functions-framework --target=renewWatch --signature-type=http --port=8081 --source=dist/functions/renewWatch.js",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "deploy:process": "gcloud functions deploy processEmail --gen2 --runtime=nodejs22 --region=asia-northeast1 --trigger-topic=gmail-notifications --entry-point=processEmail --source=. --memory=256Mi --timeout=60s --set-secrets=OAUTH_CREDENTIALS=oauth-credentials:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest --set-env-vars=GOOGLE_CALENDAR_ID=<YOUR_CALENDAR_ID>@group.calendar.google.com",
