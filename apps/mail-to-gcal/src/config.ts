@@ -12,25 +12,23 @@ export type OAuthCredentials = z.infer<typeof OAuthCredentialsSchema>;
 const emptyStringToUndefined = (value: unknown): unknown =>
   typeof value === 'string' && value.length === 0 ? undefined : value;
 
-const OAuthCredentialsEnv = z.preprocess(
-  emptyStringToUndefined,
-  z
-    .string()
-    .min(1)
-    .transform((raw, ctx): unknown => {
-      try {
-        return JSON.parse(raw);
-      } catch (e) {
-        ctx.addIssue({
-          code: 'custom',
-          message: `JSON として解釈できません: ${e instanceof Error ? e.message : String(e)}`,
-        });
-        return z.NEVER;
-      }
-    })
-    .pipe(OAuthCredentialsSchema)
-    .optional(),
-);
+const OAuthCredentialsJson = z
+  .string()
+  .min(1)
+  .transform((raw, ctx) => {
+    try {
+      return JSON.parse(raw) as unknown;
+    } catch (e) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `JSON として解釈できません: ${e instanceof Error ? e.message : String(e)}`,
+      });
+      return z.NEVER;
+    }
+  })
+  .pipe(OAuthCredentialsSchema);
+
+const OAuthCredentialsEnv = z.preprocess(emptyStringToUndefined, OAuthCredentialsJson.optional());
 
 const OptionalString = z.preprocess(emptyStringToUndefined, z.string().min(1).optional());
 
