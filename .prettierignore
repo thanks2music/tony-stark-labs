@@ -1,0 +1,11 @@
+node_modules/
+.wrangler/
+.turbo/
+.claude/
+.husky/_/
+dist/
+build/
+.next/
+coverage/
+bun.lock
+worker-configuration.d.ts

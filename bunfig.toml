@@ -1,0 +1,11 @@
+[install]
+# Use isolated linker (symlink-based, phantom-dependency free).
+# This matches pnpm's behavior and is Bun's default for new monorepos (configVersion: 1).
+linker = "isolated"
+
+# Keep the lockfile frozen in CI; run `bun install` locally to update.
+frozenLockfile = false
+
+[install.cache]
+# Share the global cache across projects.
+disable = false
