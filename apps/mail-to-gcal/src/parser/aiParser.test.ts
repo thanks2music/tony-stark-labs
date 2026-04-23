@@ -1,22 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { parseWithAI } from './aiParser.js';
 
-// Anthropic SDK をモック
-vi.mock('@anthropic-ai/sdk', () => {
-  const mockCreate = vi.fn();
-  return {
-    default: class {
-      messages = { create: mockCreate };
-    },
-    __mockCreate: mockCreate,
-  };
-});
+const { mockCreate } = vi.hoisted(() => ({ mockCreate: vi.fn() }));
 
-// モック関数への参照を取得
-async function getMockCreate() {
-  const mod = await import('@anthropic-ai/sdk');
-  return (mod as any).__mockCreate as ReturnType<typeof vi.fn>;
-}
+vi.mock('@anthropic-ai/sdk', () => ({
+  default: class {
+    messages = { create: mockCreate };
+  },
+}));
 
 describe('parseWithAI', () => {
   const messageId = 'test-ai-msg';
@@ -26,7 +17,6 @@ describe('parseWithAI', () => {
   });
 
   it('単一イベントを正しくパースする', async () => {
-    const mockCreate = await getMockCreate();
     mockCreate.mockResolvedValueOnce({
       content: [
         {
@@ -54,7 +44,6 @@ describe('parseWithAI', () => {
   });
 
   it('複数イベント（マルチDay）を正しくパースする', async () => {
-    const mockCreate = await getMockCreate();
     mockCreate.mockResolvedValueOnce({
       content: [
         {
@@ -87,7 +76,6 @@ describe('parseWithAI', () => {
   });
 
   it('イベントが見つからない場合は空配列を返す', async () => {
-    const mockCreate = await getMockCreate();
     mockCreate.mockResolvedValueOnce({
       content: [{ type: 'text', text: '[]' }],
     });
@@ -98,7 +86,6 @@ describe('parseWithAI', () => {
   });
 
   it('URLがない場合はurl=undefinedで成功する', async () => {
-    const mockCreate = await getMockCreate();
     mockCreate.mockResolvedValueOnce({
       content: [
         {
@@ -121,7 +108,6 @@ describe('parseWithAI', () => {
   });
 
   it('durationMinutesが未指定の場合はデフォルト60分になる', async () => {
-    const mockCreate = await getMockCreate();
     mockCreate.mockResolvedValueOnce({
       content: [
         {
@@ -142,7 +128,6 @@ describe('parseWithAI', () => {
   });
 
   it('```json ... ``` でラップされたレスポンスを正しくパースする', async () => {
-    const mockCreate = await getMockCreate();
     const json = JSON.stringify([
       {
         title: 'ラップされたイベント',
