@@ -70,3 +70,7 @@ Thumbs.db
 
 # misc
 .eslintcache
+
+# SDD
+docs/plan
+docs/report
