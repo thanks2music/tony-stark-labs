@@ -17,24 +17,15 @@ export async function fetchUnprocessedEmails(
 
   if (!listRes.data.messages) return [];
 
-  const messages: gmail_v1.Schema$Message[] = [];
+  const fullMessages = await Promise.all(
+    listRes.data.messages.map((msg) =>
+      gmail.users.messages.get({ userId: 'me', id: msg.id!, format: 'full' }),
+    ),
+  );
 
-  for (const msg of listRes.data.messages) {
-    const full = await gmail.users.messages.get({
-      userId: 'me',
-      id: msg.id!,
-      format: 'full',
-    });
-
-    // CalendarAdded ラベルが既にあればスキップ
-    if (full.data.labelIds?.includes(labelIds.calendarAddedId)) {
-      continue;
-    }
-
-    messages.push(full.data);
-  }
-
-  return messages;
+  return fullMessages
+    .map((res) => res.data)
+    .filter((data) => !data.labelIds?.includes(labelIds.calendarAddedId));
 }
 
 /**
