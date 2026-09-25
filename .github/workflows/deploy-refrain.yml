@@ -1,0 +1,40 @@
+name: Deploy refrain
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/refrain/worker/**'
+      - 'bun.lock'
+      - '.github/workflows/deploy-refrain.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-refrain
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .tool-versions
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # ルートパターンは独自ドメインを含むため、リポジトリではなく secret で渡す。
+      # vars ではなく secrets を使うこと（vars はワークフローログに平文で出力される）。
+      # wrangler.toml 側に [[routes]] は持たせていない。
+      - name: Deploy worker
+        run: bun run --filter refrain-worker deploy -- --routes "$REFRAIN_ROUTE"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          REFRAIN_ROUTE: ${{ secrets.REFRAIN_ROUTE }}
