@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "bun run src/index.ts",
+    "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "build": "bun build --compile --minify --sourcemap --target=bun-darwin-arm64 src/index.ts --outfile dist/refrain",
