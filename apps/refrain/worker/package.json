@@ -1,5 +1,5 @@
 {
-  "name": "worker",
+  "name": "refrain-worker",
   "version": "0.1.0",
   "private": true,
   "type": "module",
