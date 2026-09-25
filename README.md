@@ -40,10 +40,10 @@
 
 ```
 tony-stark-labs/
-├── apps/                    # 各アプリ（Phase 1 以降で取り込み）
+├── apps/                    # 各アプリ
 │   ├── refrain/             # CF Workers + R2 + macOS CLI 画像アップロードシステム
-│   │   ├── worker/          # Cloudflare Workers (Vitest)
-│   │   └── cli/             # Bun compiled binary (bun:test)
+│   │   ├── worker/          # workspace: refrain-worker (Cloudflare Workers, Vitest)
+│   │   └── cli/             # workspace: refrain-cli (Bun compiled binary, bun:test)
 │   └── mail-to-gcal/        # Gmail → Google Calendar 自動登録 (GCF 2nd gen, Vitest)
 ├── packages/                # 共有ライブラリ（初期は空）
 ├── tools/                   # 開発スクリプト
@@ -146,6 +146,8 @@ turbo run build --filter=...[HEAD^1]   # 変更 workspace とその依存のみ
 | `apps/mail-to-gcal`   | **Vitest**                                     | GCF Node22 本番ランタイムと整合                      |
 | `packages/*`          | **Vitest** 既定                                | 両ランタイムから import されうる標準寄り             |
 
+Vitest は root の devDependencies に **v4** で一本化している。`@cloudflare/vitest-pool-workers` の peerDependencies が `vitest: ^4.1.0` を要求するため、v3 へ戻すと `refrain-worker` のテストが起動しない。
+
 ## Commit Convention
 
 [Conventional Commits](https://www.conventionalcommits.org/) に従う（commitlint で自動検証）。
@@ -196,11 +198,13 @@ CEO の運用ルールに従い、Claude や他の AI が生成したコミッ�
 
 ## アプリ一覧と状態
 
-| アプリ           | 状態                 | 技術                                      | ホスティング            |
-| ---------------- | -------------------- | ----------------------------------------- | ----------------------- |
-| `refrain`        | Phase 2 取り込み予定 | Bun + CF Workers + R2 + macOS CLI         | Cloudflare Workers + R2 |
-| `mail-to-gcal`   | Phase 1 取り込み予定 | Node.js 22 + functions-framework + Vitest | Google Cloud Functions  |
-| `internal-tools` | Phase 3（汎用化後）  | 未定                                      | 未定                    |
+| アプリ           | 状態                | 技術                                      | ホスティング            |
+| ---------------- | ------------------- | ----------------------------------------- | ----------------------- |
+| `refrain`        | 取り込み済み        | Bun + CF Workers + R2 + macOS CLI         | Cloudflare Workers + R2 |
+| `mail-to-gcal`   | 取り込み済み        | Node.js 22 + functions-framework + Vitest | Google Cloud Functions  |
+| `internal-tools` | Phase 3（汎用化後） | 未定                                      | 未定                    |
+
+`refrain` は `refrain-worker` / `refrain-cli` の 2 workspace に分かれる。詳細は [apps/refrain/README.md](./apps/refrain/README.md)。
 
 ## 新しいアプリを追加する手順
 
