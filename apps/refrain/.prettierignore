@@ -1,0 +1,6 @@
+node_modules/
+.wrangler/
+dist/
+bun.lock
+*.md
+worker-configuration.d.ts

@@ -1,0 +1,4 @@
+# wrangler dev 用のローカルシークレット。
+# 実ファイル .dev.vars を作成してこの値を差し替えてから `bun run dev` する。
+# .dev.vars は .gitignore 対象。
+UPLOAD_TOKEN=dev-local-token-replace-me
