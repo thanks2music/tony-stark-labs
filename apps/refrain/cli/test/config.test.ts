@@ -2,7 +2,15 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { expandHome, readConfig, readToken, writeConfig } from '../src/config';
+import {
+  assertUsableEndpoint,
+  ENDPOINT_ENV_VAR,
+  expandHome,
+  readConfig,
+  readToken,
+  resolveEndpoint,
+  writeConfig,
+} from '../src/config';
 import { useTempDir } from './helpers';
 
 describe('expandHome', () => {
@@ -106,5 +114,63 @@ describe('readToken', () => {
     const path = join(tmp.path, 'token');
     writeFileSync(path, '   \n\t ');
     await expect(readToken(path)).rejects.toThrow(/empty/);
+  });
+});
+
+describe('resolveEndpoint', () => {
+  const ENV = ENDPOINT_ENV_VAR;
+
+  it('returns the endpoint from the environment variable', () => {
+    expect(resolveEndpoint({ [ENV]: 'https://example.com/apps/refrain/upload' }, undefined)).toBe(
+      'https://example.com/apps/refrain/upload',
+    );
+  });
+
+  it('prefers the environment variable over the config file', () => {
+    expect(
+      resolveEndpoint({ [ENV]: 'https://from-env.test/upload' }, 'https://from-config.test/upload'),
+    ).toBe('https://from-env.test/upload');
+  });
+
+  it('falls back to the config file when the environment variable is unset', () => {
+    expect(resolveEndpoint({}, 'https://from-config.test/upload')).toBe(
+      'https://from-config.test/upload',
+    );
+  });
+
+  it('ignores a whitespace-only environment variable', () => {
+    expect(resolveEndpoint({ [ENV]: '   ' }, 'https://from-config.test/upload')).toBe(
+      'https://from-config.test/upload',
+    );
+  });
+
+  it('trims surrounding whitespace', () => {
+    expect(resolveEndpoint({ [ENV]: '  https://trimmed.test/upload  ' }, undefined)).toBe(
+      'https://trimmed.test/upload',
+    );
+  });
+
+  it('returns null when neither source provides an endpoint', () => {
+    expect(resolveEndpoint({}, undefined)).toBeNull();
+  });
+
+  it('rejects an endpoint from the environment that still has the {DOMAIN} placeholder', () => {
+    expect(() =>
+      resolveEndpoint({ [ENV]: 'https://{DOMAIN}/apps/refrain/upload' }, undefined),
+    ).toThrow(/\{DOMAIN\}/);
+  });
+
+  it('rejects an endpoint from the config that still has the {DOMAIN} placeholder', () => {
+    expect(() => resolveEndpoint({}, 'https://{DOMAIN}/apps/refrain/upload')).toThrow(/\{DOMAIN\}/);
+  });
+});
+
+describe('assertUsableEndpoint', () => {
+  it('returns the endpoint unchanged when it is usable', () => {
+    expect(assertUsableEndpoint('https://example.com/upload')).toBe('https://example.com/upload');
+  });
+
+  it('throws when the {DOMAIN} placeholder remains', () => {
+    expect(() => assertUsableEndpoint('https://{DOMAIN}/upload')).toThrow(/\{DOMAIN\}/);
   });
 });
