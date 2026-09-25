@@ -67,11 +67,11 @@ Bun workspaces のモノレポ（`worker/` と `cli/`）。
 
 ### `POST /apps/refrain/upload`
 
-| ヘッダ / フィールド | 値 |
-| --- | --- |
-| `Authorization` | `Bearer <UPLOAD_TOKEN>` |
-| Content-Type | `multipart/form-data` |
-| `imagedata`（フォーム） | PNG バイナリ |
+| ヘッダ / フィールド     | 値                      |
+| ----------------------- | ----------------------- |
+| `Authorization`         | `Bearer <UPLOAD_TOKEN>` |
+| Content-Type            | `multipart/form-data`   |
+| `imagedata`（フォーム） | PNG バイナリ            |
 
 - 成功時: `200 OK`、`text/plain` で `https://{DOMAIN}/apps/refrain/i/<hash>.png\n` を 1 行返す。
 - 認証失敗: `401 Unauthorized`。
@@ -234,11 +234,11 @@ Phase 1 は単一 Bearer Token だが、会社用途（Phase 2）でマルチユ
 
 ## 参考にしたオリジナル Gyazo OSS
 
-| リポジトリ | 参考にした要素 |
-| --- | --- |
-| [gyazo/Gyazo](https://github.com/gyazo/Gyazo) (macOS) | `Gyazo/script` の `screencapture -i` + `sips` で 72dpi 正規化するロジック |
-| [gyazo/Gyazo](https://github.com/gyazo/Gyazo) (Server) | `Server/upload.cgi` のハッシュベース content-addressable なオブジェクトキー設計 |
-| [gyazo/gyazo-ruby](https://github.com/gyazo/gyazo-ruby) | モダン API レスポンス JSON の項目（将来閲覧ページを足す際の参考） |
+| リポジトリ                                              | 参考にした要素                                                                  |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [gyazo/Gyazo](https://github.com/gyazo/Gyazo) (macOS)   | `Gyazo/script` の `screencapture -i` + `sips` で 72dpi 正規化するロジック       |
+| [gyazo/Gyazo](https://github.com/gyazo/Gyazo) (Server)  | `Server/upload.cgi` のハッシュベース content-addressable なオブジェクトキー設計 |
+| [gyazo/gyazo-ruby](https://github.com/gyazo/gyazo-ruby) | モダン API レスポンス JSON の項目（将来閲覧ページを足す際の参考）               |
 
 ## ライセンス
 
