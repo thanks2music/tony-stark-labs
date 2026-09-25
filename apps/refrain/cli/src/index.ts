@@ -3,11 +3,13 @@ import { unlink } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import { captureInteractive, normalizeDpi } from './capture';
 import {
+  assertUsableEndpoint,
   DEFAULT_CONFIG_PATH,
-  DEFAULT_ENDPOINT,
   DEFAULT_TOKEN_PATH,
+  ENDPOINT_ENV_VAR,
   readConfig,
   readToken,
+  resolveEndpoint,
   writeConfig,
   type Config,
 } from './config';
@@ -26,6 +28,10 @@ Options:
   --open          Open the uploaded URL in the default browser.
   --no-copy       Do not copy the URL to the clipboard.
   -h, --help      Show this help message.
+
+Environment:
+  REFRAIN_ENDPOINT  Worker upload endpoint. Takes precedence over the
+                    config file; set it to skip the first-run prompt.
 
 Config: ~/.config/refrain/config.json (created on first run).`;
 
@@ -55,17 +61,22 @@ function parseCliArgs(argv: string[]): CliOptions | 'help' {
 
 async function loadConfigInteractively(): Promise<Config> {
   const existing = await readConfig(DEFAULT_CONFIG_PATH);
-  if (existing !== null) return existing;
+  const endpoint = resolveEndpoint(process.env, existing?.endpoint);
 
-  console.error(`No config found at ${DEFAULT_CONFIG_PATH}. Creating one interactively.\n`);
-  const endpoint = (prompt('Worker upload endpoint:', DEFAULT_ENDPOINT) ?? DEFAULT_ENDPOINT).trim();
-  if (endpoint.includes('{DOMAIN}')) {
-    throw new Error(
-      'endpoint still contains the "{DOMAIN}" placeholder — replace it with your actual Worker URL (e.g. https://example.com/apps/refrain/upload).',
-    );
+  // An endpoint from the environment wins without rewriting the stored config.
+  if (endpoint !== null && existing !== null) return { ...existing, endpoint };
+  if (endpoint !== null && existing === null) {
+    return { endpoint, tokenPath: DEFAULT_TOKEN_PATH };
+  }
+
+  console.error(`No config found at ${DEFAULT_CONFIG_PATH}. Creating one interactively.`);
+  console.error(`(set ${ENDPOINT_ENV_VAR} to skip this prompt)\n`);
+  const entered = assertUsableEndpoint((prompt('Worker upload endpoint:') ?? '').trim());
+  if (entered === '') {
+    throw new Error(`no endpoint provided — set ${ENDPOINT_ENV_VAR} or answer the prompt`);
   }
   const tokenPath = (prompt('Token file path:', DEFAULT_TOKEN_PATH) ?? DEFAULT_TOKEN_PATH).trim();
-  const config: Config = { endpoint, tokenPath };
+  const config: Config = { endpoint: entered, tokenPath };
 
   await writeConfig(DEFAULT_CONFIG_PATH, config);
   console.error(`\nConfig saved to ${DEFAULT_CONFIG_PATH}.\n`);
