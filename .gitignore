@@ -37,6 +37,9 @@ lerna-debug.log*
 .wrangler/
 .dev.vars
 worker-configuration.d.ts
+# refrain worker のみ typecheck に必須のため意図的に追跡する。
+# 再生成: bun run --filter refrain-worker cf-typegen
+!apps/refrain/worker/worker-configuration.d.ts
 .mf/
 
 # Google Cloud
