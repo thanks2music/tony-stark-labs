@@ -1,9 +1,13 @@
 # Refrain
 
-独自ドメイン（`{DOMAIN}`）で運用する、Gyazo ライクな画像アップロードシステム。
+独自ドメイン（`{DOMAIN}`）で運用する、Gyazo ライクな画像アップロードシステム。tony-stark-labs monorepo の `apps/refrain/` として配置され、`refrain-worker` と `refrain-cli` の 2 workspace で構成される。
 
 - **Phase 1（個人用）**: Cloudflare Workers + R2 + Bun CLI (macOS)
 - **Phase 2（会社用）**: AWS S3 へストレージを切替可能な抽象化を前提とした設計
+
+> **`{DOMAIN}` について**: 本リポジトリは Public のため、実ドメインをソース・設定・ドキュメントのいずれにも記載しない。ドキュメント中の `{DOMAIN}` は読み替えること。実値の供給経路は CLI が `REFRAIN_ENDPOINT` 環境変数、Worker が deploy 時の `--routes` フラグ（CI では `secrets.REFRAIN_ROUTE`）。
+>
+> なお、これは「リポジトリに書かない」という運用上の配慮であり秘匿性は得られない。画像 URL を外部に貼れば第三者にドメインは見える。アップロード経路を守るのは `UPLOAD_TOKEN` のみである。
 
 [Gyazo 公式の OSS クライアント群](https://github.com/gyazo) は DPI 正規化ロジックやハッシュによる content-addressable URL 設計を参考にするのみで、クライアント／サーバーとも新規実装する。既存 Gyazo アプリとのプロトコル互換性は持たない。
 
@@ -22,7 +26,7 @@
                                                                     ▼
                                                             ┌──────────────────────┐
                                                             │ R2 bucket            │
-                                                            │ {BUCKET_NAME}        │
+                                                            │ refrain              │
                                                             │ key: <hash>.png      │
                                                             └──────────────────────┘
 ```
@@ -33,35 +37,46 @@
 
 ## プロジェクト構成
 
-Bun workspaces のモノレポ（`worker/` と `cli/`）。
+monorepo 直下の 2 workspace。lint / format / TypeScript の設定は monorepo root に一本化されており、本ディレクトリには置かない。
 
 ```
-./
-├── worker/                    # Cloudflare Worker
+apps/refrain/
+├── worker/                    # workspace: refrain-worker
 │   ├── src/
 │   │   ├── index.ts           # ルーター + upload + 配信
 │   │   ├── storage.ts         # Storage interface + R2 実装（Phase 2 で S3 実装追加）
 │   │   └── hash.ts            # SHA-256 先頭 32 文字
 │   ├── test/                  # Vitest + @cloudflare/vitest-pool-workers
-│   ├── wrangler.toml
+│   ├── wrangler.toml          # [[routes]] は持たない（deploy 時に --routes で注入）
+│   ├── worker-configuration.d.ts  # wrangler types の生成物。typecheck に必須なので追跡する
+│   ├── vitest.config.ts
 │   ├── package.json
-│   └── tsconfig.json
-├── cli/                       # Bun CLI (macOS)
+│   └── tsconfig.json          # root の tsconfig.base.json を extends
+├── cli/                       # workspace: refrain-cli
 │   ├── src/
 │   │   ├── index.ts           # エントリ
 │   │   ├── capture.ts         # screencapture + sips での DPI 正規化
 │   │   ├── upload.ts          # fetch で POST
-│   │   └── config.ts          # ~/.config/refrain/config.json 読込
+│   │   └── config.ts          # エンドポイント解決 + ~/.config/refrain/config.json 読込
 │   ├── test/                  # bun:test
 │   ├── package.json
-│   └── tsconfig.json
-├── package.json               # workspaces + 共通 lint/format
-├── tsconfig.base.json
-├── eslint.config.js           # ESLint 9 (flat config)
-├── .prettierrc
-├── TODO.md                    # 実運用前のセットアップチェックリスト
+│   └── tsconfig.json          # root の tsconfig.base.json を extends
 └── README.md
 ```
+
+### コマンド
+
+monorepo root から `--filter` で叩く。
+
+```bash
+bun run --filter refrain-worker dev        # wrangler dev
+bun run --filter refrain-worker test       # Vitest (Workers pool)
+bun run --filter refrain-worker cf-typegen # worker-configuration.d.ts を再生成
+bun run --filter refrain-cli test          # bun:test
+bun run --filter refrain-cli build         # macOS バイナリを cli/dist/refrain に生成
+```
+
+> ⚠️ `refrain-cli` の `build` は macOS 専用バイナリ（約 60 MB）をクロスコンパイルする。CI で `turbo run build` を回す場合は `--filter=!refrain-cli` を付けること。現行 CI は build を実行しない。
 
 ## エンドポイント仕様（Worker）
 
@@ -92,9 +107,17 @@ refrain --open             # アップロード後に画像 URL をブラウザ�
 refrain --no-copy          # pbcopy にコピーしない
 ```
 
+エンドポイントの解決順序:
+
+1. `REFRAIN_ENDPOINT` 環境変数
+2. `~/.config/refrain/config.json` の `endpoint`
+3. 対話プロンプト（どちらも無い場合。入力値は config.json に保存される）
+
+環境変数が設定されている場合は config.json を書き換えずにそちらが優先される。`{DOMAIN}` プレースホルダを含む値はいずれの経路でも拒否される。
+
 処理フロー:
 
-1. `~/.config/refrain/config.json` から `endpoint` と `tokenPath` を読む。未設定なら対話で作成。
+1. 上記の順序で `endpoint` を解決し、`tokenPath` を `~/.config/refrain/config.json` から読む。
 2. 引数にファイルパスがあればそれを、なければ `screencapture -i /tmp/refrain-<pid>.png` で矩形選択 UI を起動。
 3. `sips` で 72dpi 換算（Retina ディスプレイでの論理解像度保持。[Gyazo 公式 macOS クライアント](https://github.com/gyazo/Gyazo)の `Gyazo/script` から移植）。
 4. `fetch` で `imagedata` を multipart POST。`Authorization: Bearer <token>` を添える。
@@ -106,16 +129,40 @@ refrain --no-copy          # pbcopy にコピーしない
 
 `cli/package.json` に定義された `build` / `build:x64` スクリプトで、Bun ランタイム同梱の単一バイナリ（約 60 MB）を生成する。詳細な手順は下の **セットアップ手順 → 2. CLI セットアップ** と **3. ホットキー登録（macOS）** を参照。
 
-## セットアップ手順
+## 運用セットアップ（Cloudflare 側）
 
-前提として、ドメイン・R2 バケット・`UPLOAD_TOKEN` の準備が完了している必要がある。未着手の場合は先に [TODO.md](./TODO.md) のチェックリストを通すこと。
+実運用するまでのチェックリスト。`{DOMAIN}` は使うドメインに読み替える。
+
+- [x] `{DOMAIN}` のネームサーバーを Cloudflare に委譲（registrar から Cloudflare 提示の 2 本の `*.ns.cloudflare.com` に張り替え）
+- [x] Cloudflare R2 を有効化（支払い情報登録が必要。無料枠: ストレージ 10 GB/月、Class A 操作 1M/月、Class B 10M/月）
+- [x] R2 バケット `refrain` を作成
+- [ ] `{DOMAIN}` の apex にプロキシ有効（オレンジ雲 ON）のダミー A レコード `192.0.2.1` を追加（Workers ルート発火用）
+- [ ] `wrangler login` で Cloudflare 認証（`wrangler` は `refrain-worker` の devDependency なので個別インストールは不要）
+- [ ] `openssl rand -hex 32` でトークンを生成し、`bun run --filter refrain-worker exec -- wrangler secret put UPLOAD_TOKEN` で Worker に登録
+- [ ] 同じトークン値を `~/.config/refrain/token`（chmod 600）に配置（CLI 側）
+- [ ] GitHub Actions に `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` / `REFRAIN_ROUTE` の **secrets** を登録（`REFRAIN_ROUTE` は `{DOMAIN}/apps/refrain/*`）
+
+> `wrangler.toml` に `[[routes]]` は書かない。ルートは deploy 時に `--routes` で注入する。ローカルから手動デプロイする場合も同様:
+>
+> ```bash
+> bun run --filter refrain-worker deploy -- --routes "{DOMAIN}/apps/refrain/*"
+> ```
+
+## セットアップ手順
 
 ### 1. Worker デプロイ
 
+上の「運用セットアップ」が完了している前提。monorepo root から:
+
 ```bash
-cd worker
 bun install
-wrangler deploy
+bun run --filter refrain-worker deploy -- --routes "{DOMAIN}/apps/refrain/*"
+```
+
+ローカル検証だけなら `--dry-run` を付ける（ルート指定も Cloudflare 認証も不要）:
+
+```bash
+bunx wrangler deploy --dry-run --config apps/refrain/worker/wrangler.toml
 ```
 
 ### 2. CLI セットアップ
@@ -125,12 +172,16 @@ wrangler deploy
 バイナリをビルドして `~/bin/` に配置する。Apple Silicon の場合:
 
 ```bash
-cd cli
-bun install
-bun run build              # → cli/dist/refrain (Apple Silicon)
-# Intel Mac なら: bun run build:x64
+bun run --filter refrain-cli build       # → apps/refrain/cli/dist/refrain
+# Intel Mac なら: bun run --filter refrain-cli build:x64
 mkdir -p ~/bin
-mv dist/refrain ~/bin/
+mv apps/refrain/cli/dist/refrain ~/bin/
+```
+
+初回起動時にエンドポイントとトークンパスを対話で聞かれる。プロンプトを出したくない場合は環境変数を使う:
+
+```bash
+REFRAIN_ENDPOINT="https://{DOMAIN}/apps/refrain/upload" ~/bin/refrain
 ```
 
 `~/bin` が PATH に通っていない場合は一度だけ追加する:
@@ -159,9 +210,13 @@ chmod 600 ~/.config/refrain/token
 
 1. **ショートカット.app** を開き、左上「+」で新規ショートカット作成
 2. サイドバーから「**シェルスクリプトを実行**」をドラッグ
-3. シェルを `/bin/zsh` に設定、スクリプト欄に `refrain`（または `$HOME/bin/refrain` のフルパス）を入力
-4. 右上「情報」ボタン → 「**キーボードショートカット**」 → 任意のホットキー（例: `⌃⌥⇧G`）を割り当て
-5. 名前を `refrain` に設定（Shortcuts.app は自動保存される）
+3. シェルを `/bin/zsh` に設定、スクリプト欄に `$HOME/bin/refrain` を入力
+4. 右上「情報」ボタン → 「**キーボードショートカット**」 → 任意のホットキーを割り当て
+5. 名前を `Refrain` に設定（Shortcuts.app は自動保存される）
+
+> **現在の設定**: ショートカット.app に `Refrain` という名前で登録済み。割り当ては **`⌃⇧⌘R`**（Control + Shift + Command + R）。「クイックアクションとして使用」「サービスメニュー」「Spotlight に表示」が有効。
+>
+> 割り当てを確認・変更するには ショートカット.app → `Refrain` → 右上の ⓘ → 「キーボードショートカット」。この値は macOS 側（TCC 保護下の Shortcuts データベース）にのみ存在し、本リポジトリからは再現できない。
 
 #### Option B: Raycast Script Command
 
@@ -196,8 +251,8 @@ Alfred の **Hotkey Trigger** → **Run Script** で `$HOME/bin/refrain` を実�
 ## ローカル検証
 
 ```bash
-# Worker をローカル起動（R2 はエミュレート）
-cd worker && wrangler dev
+# Worker をローカル起動（R2 はエミュレート）。UPLOAD_TOKEN は worker/.dev.vars から読まれる
+bun run --filter refrain-worker dev
 
 # 別ターミナルで:
 
