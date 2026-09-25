@@ -4,7 +4,7 @@ Related: [specs/001-mail-to-gcal-import/spec.md](../001-mail-to-gcal-import/spec
 
 ## 目的
 
-独立リポジトリ Refrain（`/Users/yoshi/work/dev/my-projects/we-are-all-one/gyazo-remake`、Cloudflare Workers + R2 + Bun CLI のスクリーンショット・アップロードシステム）を tony-stark-labs monorepo の `apps/refrain/` として取り込み、Bun workspaces + Turborepo ツールチェーン下で `bun run --filter` 経由の lint / typecheck / test が可能な状態にする。
+独立リポジトリ Refrain（Cloudflare Workers + R2 + Bun CLI のスクリーンショット・アップロードシステム）を tony-stark-labs monorepo の `apps/refrain/` として取り込み、Bun workspaces + Turborepo ツールチェーン下で `bun run --filter` 経由の lint / typecheck / test が可能な状態にする。
 
 取り込み元は git remote すら持たない完全ローカルのリポジトリで、CI も存在しない。monorepo 側は `workspaces` の `"apps/refrain/*"`、`turbo.json` の `deploy.env`（`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`）、`eslint.config.js` の `**/.wrangler/**` ignores を既に先回りで用意しており、本 spec でそれらを実際に接続する。
 

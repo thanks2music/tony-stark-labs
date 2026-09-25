@@ -147,14 +147,18 @@ refrain --no-copy          # pbcopy にコピーしない
 
 実運用するまでのチェックリスト。`{DOMAIN}` は使うドメインに読み替える。
 
-- [x] `{DOMAIN}` のネームサーバーを Cloudflare に委譲（registrar から Cloudflare 提示の 2 本の `*.ns.cloudflare.com` に張り替え）
-- [x] Cloudflare R2 を有効化（支払い情報登録が必要。無料枠: ストレージ 10 GB/月、Class A 操作 1M/月、Class B 10M/月）
-- [x] R2 バケット `refrain` を作成
-- [ ] `{DOMAIN}` の apex にプロキシ有効（オレンジ雲 ON）のダミー A レコード `192.0.2.1` を追加（Workers ルート発火用）
-- [ ] `wrangler login` で Cloudflare 認証（`wrangler` は `refrain-worker` の devDependency なので個別インストールは不要）
-- [ ] `openssl rand -hex 32` でトークンを生成し、`bun run --filter refrain-worker exec -- wrangler secret put UPLOAD_TOKEN` で Worker に登録
-- [ ] 同じトークン値を `~/.config/refrain/token`（chmod 600）に配置（CLI 側）
-- [ ] GitHub Actions に `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` / `REFRAIN_ROUTE` の **secrets** を登録（`REFRAIN_ROUTE` は `{DOMAIN}/apps/refrain/*`）
+**Worker は既に本番稼働中**（monorepo 取り込み前に手動デプロイ済み）。残作業は CI からの自動デプロイを有効化する最終項目のみ。
+
+- [x] `{DOMAIN}` のネームサーバーを Cloudflare に委譲（`dig NS {DOMAIN}` が `*.ns.cloudflare.com` を返すことで確認）
+- [x] Cloudflare R2 を有効化（無料枠: ストレージ 10 GB/月、Class A 操作 1M/月、Class B 10M/月）
+- [x] R2 バケット `refrain` を作成（未存在ハッシュへの GET が 404 を返すことで疎通確認）
+- [x] `{DOMAIN}` の apex にプロキシ有効（オレンジ雲 ON）の A レコードを追加（`dig A {DOMAIN}` が Cloudflare の proxy IP を返すことで確認）
+- [x] `wrangler login` で Cloudflare 認証（`wrangler` は `refrain-worker` の devDependency なので個別インストールは不要）
+- [x] `openssl rand -hex 32` でトークンを生成し、`wrangler secret put UPLOAD_TOKEN` で Worker に登録（認証なし POST が 401 を返すことで確認）
+- [x] 同じトークン値を `~/.config/refrain/token`（chmod 600）に配置（CLI 側）
+- [ ] **GitHub Actions に `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` / `REFRAIN_ROUTE` の secrets を登録**（`REFRAIN_ROUTE` は `{DOMAIN}/apps/refrain/*`）。未登録のうちは `.github/workflows/deploy-refrain.yml` が失敗するため、登録するまで main にマージしない
+
+> **`vars` ではなく `secrets` を使うこと。** Repository variables はワークフローログに平文で出力されるが、secrets は自動的にマスクされる。
 
 > `wrangler.toml` に `[[routes]]` は書かない。ルートは deploy 時に `--routes` で注入する。ローカルから手動デプロイする場合も同様:
 >
