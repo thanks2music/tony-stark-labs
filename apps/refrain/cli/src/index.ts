@@ -22,7 +22,8 @@ send it to your configured endpoint, and copy the resulting URL
 to the clipboard.
 
 Arguments:
-  FILE            Optional path to an existing image to upload.
+  FILE            Optional path to an existing PNG image to upload.
+                  The server accepts PNG only.
 
 Options:
   --open          Open the uploaded URL in the default browser.

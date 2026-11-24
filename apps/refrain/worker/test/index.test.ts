@@ -15,12 +15,25 @@ const PNG_BYTES = new Uint8Array([
   0x6a, 0x8f, 0xd8, 0x9f, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
 ]);
 
-function buildUploadRequest(token?: string, bytes: Uint8Array = PNG_BYTES): Request {
-  const headers = new Headers();
+/**
+ * Builds a multipart upload the way real clients send it (Bun's fetch and curl -F),
+ * with a Content-Length header. A Request built straight from FormData omits it.
+ */
+async function multipartRequest(form: FormData, token?: string): Promise<Request> {
+  const encoded = new Response(form);
+  const body = await encoded.arrayBuffer();
+  const headers = new Headers({
+    'content-type': encoded.headers.get('content-type') ?? '',
+    'content-length': String(body.byteLength),
+  });
   if (token !== undefined) headers.set('authorization', `Bearer ${token}`);
-  const body = new FormData();
-  body.append('imagedata', new Blob([bytes], { type: 'image/png' }), 'test.png');
   return new Request(UPLOAD_URL, { method: 'POST', headers, body });
+}
+
+function buildUploadRequest(token?: string, bytes: Uint8Array = PNG_BYTES): Promise<Request> {
+  const form = new FormData();
+  form.append('imagedata', new Blob([bytes], { type: 'image/png' }), 'test.png');
+  return multipartRequest(form, token);
 }
 
 /** A PNG signature followed by zero bytes, `size` bytes in total. */
@@ -39,25 +52,25 @@ async function dispatch(request: Request): Promise<Response> {
 
 describe('worker: POST /upload', () => {
   it('401 when Authorization header is missing', async () => {
-    const res = await dispatch(buildUploadRequest());
+    const res = await dispatch(await buildUploadRequest());
     expect(res.status).toBe(401);
   });
 
   it('401 when Bearer token is wrong', async () => {
-    const res = await dispatch(buildUploadRequest('wrong-token'));
+    const res = await dispatch(await buildUploadRequest('wrong-token'));
     expect(res.status).toBe(401);
   });
 
   it('200 + URL body when token is valid', async () => {
-    const res = await dispatch(buildUploadRequest(TOKEN));
+    const res = await dispatch(await buildUploadRequest(TOKEN));
     expect(res.status).toBe(200);
     const body = await res.text();
     expect(body).toMatch(/^http:\/\/worker\.local\/i\/[0-9a-f]{32}\.png\n$/);
   });
 
   it('is idempotent for identical images', async () => {
-    const a = await dispatch(buildUploadRequest(TOKEN));
-    const b = await dispatch(buildUploadRequest(TOKEN));
+    const a = await dispatch(await buildUploadRequest(TOKEN));
+    const b = await dispatch(await buildUploadRequest(TOKEN));
     expect(await a.text()).toBe(await b.text());
   });
 
@@ -107,42 +120,37 @@ describe('worker: POST /upload', () => {
   });
 
   it('413 when the image is larger than the limit', async () => {
-    const res = await dispatch(buildUploadRequest(TOKEN, pngOfSize(MAX_UPLOAD_BYTES + 1)));
+    const res = await dispatch(await buildUploadRequest(TOKEN, pngOfSize(MAX_UPLOAD_BYTES + 1)));
     expect(res.status).toBe(413);
   });
 
   it('accepts an image exactly at the limit', async () => {
-    const res = await dispatch(buildUploadRequest(TOKEN, pngOfSize(MAX_UPLOAD_BYTES)));
+    const res = await dispatch(await buildUploadRequest(TOKEN, pngOfSize(MAX_UPLOAD_BYTES)));
     expect(res.status).toBe(200);
   });
 
   it('415 when the content is not a PNG', async () => {
     const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46]);
-    const res = await dispatch(buildUploadRequest(TOKEN, jpeg));
+    const res = await dispatch(await buildUploadRequest(TOKEN, jpeg));
     expect(res.status).toBe(415);
   });
 
   it('401 when the token differs only in length', async () => {
-    const res = await dispatch(buildUploadRequest(`${TOKEN}x`));
+    const res = await dispatch(await buildUploadRequest(`${TOKEN}x`));
     expect(res.status).toBe(401);
   });
 
   it('400 when imagedata field is missing', async () => {
-    const body = new FormData();
-    body.append('other', 'foo');
-    const req = new Request(UPLOAD_URL, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${TOKEN}` },
-      body,
-    });
-    const res = await dispatch(req);
+    const form = new FormData();
+    form.append('other', 'foo');
+    const res = await dispatch(await multipartRequest(form, TOKEN));
     expect(res.status).toBe(400);
   });
 });
 
 describe('worker: GET /i/:hash.png', () => {
   it('returns the stored PNG with expected headers', async () => {
-    const upload = await dispatch(buildUploadRequest(TOKEN));
+    const upload = await dispatch(await buildUploadRequest(TOKEN));
     const url = (await upload.text()).trim();
 
     const res = await dispatch(new Request(url));

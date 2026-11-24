@@ -7,6 +7,12 @@ on:
       - 'apps/refrain/worker/**'
       - 'bun.lock'
       - 'turbo.json'
+      # turbo の globalDependencies と、ツールのバージョンを決める root のファイル
+      - 'package.json'
+      - 'eslint.config.js'
+      - 'tsconfig.base.json'
+      - 'bunfig.toml'
+      - '.tool-versions'
       - '.github/actions/setup/**'
       - '.github/workflows/deploy-refrain.yml'
   workflow_dispatch:

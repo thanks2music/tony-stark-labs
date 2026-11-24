@@ -19,7 +19,7 @@ Related: [plan.md](./plan.md), [tasks.md](./tasks.md), [specs/003-refrain-import
 ### Worker
 
 - `POST /upload` で受け付け、Image URL は `https://{DOMAIN}/i/<hash>.png` になる（パスの前置き `/apps/refrain` を外す）
-- 20 MB を超えるアップロードは 413 を返す（`Content-Length` で本体を読む前に判定し、届いた本体の大きさでも判定する）
+- 20 MB を超えるアップロードは 413 を返す（`Content-Length` で本体を読む前に判定し、届いた本体の大きさでも判定する）。`Content-Length` の無いリクエストは 411 を返す
 - PNG でない内容（先頭 8 バイトが PNG のシグネチャでない）は 415 を返す
 - 画像の配信に `X-Content-Type-Options: nosniff` を付ける
 - Upload Token の比較で長さが漏れない（両方を SHA-256 にかけてから `timingSafeEqual` で比べる）

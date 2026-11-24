@@ -43,8 +43,13 @@ async function handleUpload(
     return text(400, 'Expected multipart/form-data with imagedata field');
   }
 
-  const declaredLength = Number(request.headers.get('content-length') ?? 0);
-  if (declaredLength > MAX_UPLOAD_BYTES + MULTIPART_OVERHEAD_BYTES) {
+  // Without Content-Length (a chunked body) the size could only be checked after
+  // formData() had buffered everything, so require it.
+  const lengthHeader = request.headers.get('content-length');
+  if (lengthHeader === null) {
+    return text(411, 'Content-Length is required');
+  }
+  if (Number(lengthHeader) > MAX_UPLOAD_BYTES + MULTIPART_OVERHEAD_BYTES) {
     return text(413, TOO_LARGE);
   }
 

@@ -21,6 +21,8 @@ export const DEFAULT_TOKEN_PATH = join(DEFAULT_CONFIG_DIR, 'token');
 export const ENDPOINT_ENV_VAR = 'REFRAIN_ENDPOINT';
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
+// The Worker's upload route. Older configs pointed at /apps/refrain/upload.
+const UPLOAD_PATH = '/upload';
 
 /**
  * Validates the upload endpoint and returns it unchanged.
@@ -44,6 +46,11 @@ export function parseEndpoint(raw: string): string {
   if (url.protocol !== 'https:' && !isLocalHttp) {
     throw new Error(
       `endpoint must use https (http is allowed only for localhost and 127.0.0.1): ${raw}`,
+    );
+  }
+  if (url.pathname !== UPLOAD_PATH) {
+    throw new Error(
+      `endpoint path must be ${UPLOAD_PATH} (e.g. https://<host>${UPLOAD_PATH}): ${raw}`,
     );
   }
   return raw;

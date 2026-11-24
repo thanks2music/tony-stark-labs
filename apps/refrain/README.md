@@ -102,6 +102,7 @@ monorepo 取り込み時に決めた、壊しやすい取り決め。
 
 - 成功時: `200 OK`、`text/plain` で `https://{DOMAIN}/i/<hash>.png\n` を 1 行返す。
 - 認証失敗: `401 Unauthorized`。トークンは両方を SHA-256 にかけてから定数時間で比較する（長さも漏らさない）。
+- `Content-Length` の無いリクエスト（chunked）: `411 Length Required`。本体を読む前にサイズを判定するため。Bun の `fetch` と `curl -F` は付けて送る。
 - 20 MB を超える画像: `413 Payload Too Large`（`Content-Length` で本体を読む前にも判定する）。
 - PNG でない内容: `415 Unsupported Media Type`（先頭 8 バイトのシグネチャで判定）。
 - 同じ画像を 2 回送ると同じ URL が返る（`<hash>` ベースの冪等性）。
@@ -116,7 +117,7 @@ monorepo 取り込み時に決めた、壊しやすい取り決め。
 
 ```
 refrain                    # screencapture -i で矩形選択 → アップロード
-refrain <file.png>         # 既存ファイルをアップロード
+refrain <file.png>         # 既存の PNG ファイルをアップロード（PNG 以外は Worker が 415 で拒否する）
 refrain --open             # アップロード後に画像 URL をブラウザで開く
 refrain --no-copy          # pbcopy にコピーしない
 ```
