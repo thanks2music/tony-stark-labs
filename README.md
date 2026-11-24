@@ -178,10 +178,6 @@ Vitest は root の devDependencies に **v4** で一本化している。`@clou
 
 **subject の大文字小文字**: commitlint のデフォルト設定により、subject は sentence-case / start-case / pascal-case / upper-case を禁止する。文頭は lowercase で開始し、proper noun（`Bun`, `Turborepo` など）は中間で大文字のまま使用できる。
 
-### AI 生成コミットの扱い
-
-CEO の運用ルールに従い、Claude や他の AI が生成したコミットに `Co-Authored-By:` 署名は**付与しない**。コミットメッセージや PR 本文は AI が提案するが、実際の commit / push / PR 作成は人間が行う。
-
 ## pre-commit / CI
 
 ### pre-commit
