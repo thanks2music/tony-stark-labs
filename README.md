@@ -25,16 +25,16 @@
 
 ## 技術スタック
 
-| 層                       | 採用                                    |
-| ------------------------ | --------------------------------------- |
-| Package Manager          | Bun (`packageManager: bun@1.3.2`)       |
-| タスクランナー           | Turborepo 2.x                           |
-| ランタイム               | Bun 1.3.2 / Node.js 24.14.0             |
-| 言語                     | TypeScript 6                            |
-| Lint / Format            | ESLint 9 (flat config) / Prettier 3     |
-| Test                     | Vitest（Workers）・bun:test（Bun 専用） |
-| Git Hook                 | husky + lint-staged + commitlint        |
-| ランタイムバージョン管理 | `.tool-versions` (mise / asdf)          |
+| 層                       | 採用                                                        |
+| ------------------------ | ----------------------------------------------------------- |
+| Package Manager          | Bun (`packageManager: bun@1.3.2`)                           |
+| タスクランナー           | Turborepo 2.x                                               |
+| ランタイム               | Bun 1.3.2 / Node.js 26 LTS（`.tool-versions`）              |
+| 言語                     | TypeScript 6                                                |
+| Lint / Format            | Biome 2（format・lint）/ ESLint 9（型情報を使うルールだけ） |
+| Test                     | Vitest（Workers）・bun:test（Bun 専用）                     |
+| Git Hook                 | husky + lint-staged + commitlint                            |
+| ランタイムバージョン管理 | `.tool-versions` (mise / asdf)                              |
 
 ## ディレクトリ構造
 
@@ -54,8 +54,8 @@ tony-stark-labs/
 ├── package.json             # workspaces, packageManager, scripts
 ├── turbo.json               # task pipeline
 ├── tsconfig.base.json       # strict TS ベース設定
-├── eslint.config.js         # flat config
-├── .prettierrc / .prettierignore
+├── biome.json               # format と一般的な lint
+├── eslint.config.js         # 型情報を使うルールだけ（docs/adr/0001）
 └── bunfig.toml              # linker = "isolated"
 ```
 
@@ -64,7 +64,7 @@ tony-stark-labs/
 | ツール       | バージョン                     | 備考                                  |
 | ------------ | ------------------------------ | ------------------------------------- |
 | Bun          | `>=1.3` (cf. `.tool-versions`) | Package manager / ランタイム          |
-| Node.js      | `>=22` (cf. `.tool-versions`)  | wrangler・tsc・ESLint などの実行用    |
+| Node.js      | `>=26` (cf. `.tool-versions`)  | wrangler・tsc・ESLint などの実行用    |
 | mise or asdf | 最新                           | `.tool-versions` でバージョンを揃える |
 
 ```bash
@@ -83,8 +83,8 @@ bun run lint            # turbo run lint
 bun run typecheck       # turbo run typecheck
 bun run test            # turbo run test
 bun run build           # turbo run build
-bun run format          # prettier --write .
-bun run format:check    # prettier --check .
+bun run check           # biome check .（format と lint）
+bun run check:fix       # biome check --write .
 
 # 特定 workspace のみ
 bun run --filter <name> <script>
@@ -146,7 +146,7 @@ turbo run build --filter=...[HEAD^1]   # 変更 workspace とその依存のみ
 | `apps/refrain/cli`    | **bun:test**                                   | `Bun.spawn` / `bun build --compile` とランタイム一致 |
 | `packages/*`          | **Vitest** 既定                                | 両ランタイムから import されうる標準寄り             |
 
-Vitest は root の devDependencies に **v4** で一本化している。`@cloudflare/vitest-pool-workers` の peerDependencies が `vitest: ^4.1.0` を要求するため、v3 へ戻すと `refrain-worker` のテストが起動しない。
+Vitest は、使う workspace（いまは `refrain-worker`）の devDependencies に **v4** で宣言している。`@cloudflare/vitest-pool-workers` の peerDependencies が `vitest: ^4.1.0` を要求するため、v3 へ戻すと `refrain-worker` のテストが起動しない。
 
 ## Commit Convention
 
@@ -182,14 +182,14 @@ Vitest は root の devDependencies に **v4** で一本化している。`@clou
 
 ### pre-commit
 
-- `husky` + `lint-staged` でステージ済みファイルに ESLint + Prettier を自動適用（`.husky/pre-commit`）
+- `husky` + `lint-staged` でステージ済みファイルに Biome と ESLint を自動適用（`.husky/pre-commit`）
 - `commit-msg` hook で commitlint が走る（`.husky/commit-msg`）
 
 初回のセットアップは `bun install` 時に `prepare` script が `husky` を初期化する。手動で `bun run prepare` を実行してもよい。
 
 ### CI
 
-- `.github/workflows/ci.yml`: PR と main push で `lint` / `format:check` / `typecheck` / `test` を実行
+- `.github/workflows/ci.yml`: PR と main push で `lint`（ESLint）/ `check`（Biome）/ `typecheck` / `test` を実行
 - アプリごとの `deploy-*.yml` は各アプリ取り込み時に追加する
 
 ## アプリ一覧と状態
@@ -211,11 +211,11 @@ Vitest は root の devDependencies に **v4** で一本化している。`@clou
    git subtree add --prefix=apps/<name> <remote-url> main --squash
    ```
 
-3. `apps/<name>/package.json` から devDependencies を root に昇格
+3. devDependencies は `apps/<name>/package.json` に残す（root に上げるのはリポジトリ管理用のツールだけ。AGENTS.md の「依存は使う workspace に宣言する」）
 4. `apps/<name>/tsconfig.json` を `extends: "../../tsconfig.base.json"` に
 5. ハードコード値があれば環境変数化（`src/config.ts` + Zod）
 6. `bun install` で lockfile 再生成
-7. `bun run lint typecheck test` がパスすることを確認
+7. `bun run check && bun run lint && bun run typecheck && bun run test` がパスすることを確認
 8. 必要なら `.github/workflows/deploy-<name>.yml` を追加
 
 ## ライセンス
