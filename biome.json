@@ -2,7 +2,14 @@
   "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
-    "includes": ["**", "!!**/archive", "!!.husky/_", "!**/worker-configuration.d.ts"]
+    "includes": [
+      "**",
+      "!!**/archive",
+      "!!.husky/_",
+      "!!**/.claude",
+      "!!**/CLAUDE.md",
+      "!**/worker-configuration.d.ts"
+    ]
   },
   "formatter": {
     "indentStyle": "space",

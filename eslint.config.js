@@ -1,4 +1,3 @@
-// @ts-check
 // ESLint は型情報を使うルールだけを担当する。それ以外の lint と format は Biome（biome.json）。
 // 分担の理由は docs/adr/0001-biome-with-type-aware-eslint.md。
 import tseslint from 'typescript-eslint';
@@ -9,7 +8,7 @@ export default tseslint.config(
     ignores: ['**/worker-configuration.d.ts', 'archive/**'],
   },
   {
-    files: ['**/*.ts'],
+    files: ['**/*.{ts,tsx,mts,cts}'],
     extends: [tseslint.configs.recommendedTypeCheckedOnly],
     languageOptions: {
       parserOptions: {

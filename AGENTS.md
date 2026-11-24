@@ -39,9 +39,10 @@ bun run check && bun run lint && bun run typecheck && bun run test
 
 ### Lint と format は Biome + 型情報だけの ESLint
 
-- format と一般的な lint は Biome（`biome.json`、`bun run check`）。ESLint は typescript-eslint の `recommendedTypeCheckedOnly`（型情報を使うルールだけ）を `.ts` に適用する（`bun run lint`）。理由は [ADR 0001](./docs/adr/0001-biome-with-type-aware-eslint.md)
+- format と一般的な lint は Biome（`biome.json`、`bun run check`）。ESLint は typescript-eslint の `recommendedTypeCheckedOnly`（型情報を使うルールだけ）を TypeScript のファイル（`.ts`・`.tsx`・`.mts`・`.cts`）に適用する（`bun run lint`）。理由は [ADR 0001](./docs/adr/0001-biome-with-type-aware-eslint.md)
 - **型情報を使わないルールを ESLint に足さない。** Biome とルールが重なる。足したいルールは `biome.json` で有効にする
 - `eslint.config.js` は `projectService: true` で、各 workspace の `tsconfig.json` を自動で解決する。lint する `.ts` は、どれかの `tsconfig.json` の `include` に入っている必要がある
+- Biome は `.gitignore` を読むが、グローバルの `~/.gitignore` は読まない。グローバルだけで除外している個人のファイル（`CLAUDE.md`・`.claude/`）は、`biome.json` の `files.includes` で除外している
 - ルールを止める前に、コード側で直せないかを考える。今ある例外は、bun:test の型の都合で `await-thenable` を CLI のテストだけで止めているもの 1 つ
 
 ### Turbo の実行単位
