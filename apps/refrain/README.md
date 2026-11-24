@@ -1,11 +1,11 @@
 # Refrain
 
-独自ドメイン（`{DOMAIN}`）で運用する、Gyazo ライクな画像アップロードシステム。tony-stark-labs monorepo の `apps/refrain/` として配置され、`refrain-worker` と `refrain-cli` の 2 workspace で構成される。
+独自ドメインの専用サブドメイン（`{DOMAIN}`）で運用する、Gyazo ライクな画像アップロードシステム。tony-stark-labs monorepo の `apps/refrain/` として配置され、`refrain-worker` と `refrain-cli` の 2 workspace で構成される。
 
 - **Phase 1（個人用）**: Cloudflare Workers + R2 + Bun CLI (macOS)
 - **Phase 2（会社用）**: AWS S3 へストレージを切替可能な抽象化を前提とした設計
 
-> **`{DOMAIN}` について**: 本リポジトリは Public のため、実ドメインをソース・設定・ドキュメントのいずれにも記載しない。ドキュメント中の `{DOMAIN}` は読み替えること。実値の供給経路は CLI が `REFRAIN_ENDPOINT` 環境変数、Worker が deploy 時の `--routes` フラグ（CI では `secrets.REFRAIN_ROUTE`）。
+> **`{DOMAIN}` について**: 本リポジトリは Public のため、実ドメインをソース・設定・ドキュメントのいずれにも記載しない。ドキュメント中の `{DOMAIN}` は読み替えること。`{DOMAIN}` は Refrain 専用のホスト名（サブドメイン）を指す。実値の供給経路は CLI が `REFRAIN_ENDPOINT` 環境変数か `~/.config/refrain/config.json`、Worker が deploy 時の `--domain` フラグ（CI では `secrets.REFRAIN_DOMAIN`）。
 >
 > なお、これは「リポジトリに書かない」という運用上の配慮であり秘匿性は得られない。画像 URL を外部に貼れば第三者にドメインは見える。アップロード経路を守るのは `UPLOAD_TOKEN` のみである。
 
@@ -16,10 +16,10 @@
 ```
 ┌──────────────────────┐   Bearer token + PNG(multipart)    ┌──────────────────────────┐
 │  Bun CLI (macOS)     │ ─────────────────────────────────► │  Cloudflare Worker       │
-│  screencapture -i    │                                    │  POST /apps/refrain/upload │
+│  screencapture -i    │                                    │  POST /upload            │
 │  → POST              │ ◄───────────── text/plain URL ──── │  → R2.put(<hash>.png)    │
 │  → pbcopy URL        │                                    │                          │
-└──────────────────────┘                                    │  GET /apps/refrain/i/<h>   │
+└──────────────────────┘                                    │  GET /i/<hash>.png       │
                                                             │  → R2.get → 画像         │
                                                             └──────────────────────────┘
                                                                     │
@@ -31,7 +31,7 @@
                                                             └──────────────────────┘
 ```
 
-- 画像 URL 形式: `https://{DOMAIN}/apps/refrain/i/<hash>.png`
+- 画像 URL 形式: `https://{DOMAIN}/i/<hash>.png`。Worker は Workers Custom Domain でホスト名全体を受けるので、パスにアプリ名の前置きは付けない（[ADR 0002](../../docs/adr/0002-one-subdomain-per-app.md)）
 - `<hash>` は SHA-256 先頭 32 文字（16 バイト）の hex。同一画像のアップロードは同一 URL に冪等に収束する。
 - アップロード認証は単一 Bearer Token（`UPLOAD_TOKEN` Secret）。Phase 2 でマルチユーザー化する場合はこの層だけ差し替える。
 
@@ -47,7 +47,7 @@ apps/refrain/
 │   │   ├── storage.ts         # Storage interface + R2 実装（Phase 2 で S3 実装追加）
 │   │   └── hash.ts            # SHA-256 先頭 32 文字
 │   ├── test/                  # Vitest + @cloudflare/vitest-pool-workers
-│   ├── wrangler.toml          # [[routes]] は持たない（deploy 時に --routes で注入）
+│   ├── wrangler.toml          # Custom Domain は持たない（deploy 時に --domain で渡す）
 │   ├── worker-configuration.d.ts  # wrangler types の生成物。typecheck に必須なので追跡する
 │   ├── vitest.config.ts
 │   ├── package.json
@@ -84,17 +84,17 @@ monorepo 取り込み時に決めた、壊しやすい取り決め。
 
 | 制約                                                                    | 理由                                                                                                                                                                        |
 | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Vitest を v3 に下げない**                                             | `@cloudflare/vitest-pool-workers` の peerDependencies が `vitest: ^4.1.0`。下げると `refrain-worker` のテストが起動しない。root の devDependencies に一本化してある         |
+| **Vitest を v3 に下げない**                                             | `@cloudflare/vitest-pool-workers` の peerDependencies が `vitest: ^4.1.0`。下げると `refrain-worker` のテストが起動しない                                                   |
 | **`wrangler.toml` を gitignore に戻さない**                             | `worker/vitest.config.ts` が `configPath: './wrangler.toml'` を参照する。無いと CI の `bun run test` が起動時に落ちる                                                       |
-| **`wrangler.toml` に `[[routes]]` を書かない**                          | 本リポジトリは Public。ルートは deploy 時に `--routes` で注入する（`routes` は `workers_dev = true` なら省略可能）                                                          |
+| **`wrangler.toml` に Custom Domain（`[[routes]]`）を書かない**          | 本リポジトリは Public。ホスト名は deploy 時に `--domain` で渡す（[ADR](./docs/adr/0001-keep-the-domain-out-of-the-repository.md)）                                          |
 | **`worker-configuration.d.ts` を消さない**                              | `wrangler types` の生成物だが typecheck に必須。root `.gitignore` は同名を無視するので `!apps/refrain/worker/worker-configuration.d.ts` で例外化済み。再生成は `cf-typegen` |
 | **`@cloudflare/vitest-pool-workers` / `wrangler` を root に昇格しない** | refrain 固有の依存であり、他 workspace には不要                                                                                                                             |
-| **CLI にドメインのデフォルト値を持たせない**                            | `REFRAIN_ENDPOINT` → config.json → 対話プロンプトの順で解決する。`{DOMAIN}` を含む値はどの経路でも拒否される                                                                |
+| **CLI にドメインのデフォルト値を持たせない**                            | `REFRAIN_ENDPOINT` → config.json → 対話プロンプトの順で解決する。`https:` の URL でなければ拒否する（`http:` は `localhost`・`127.0.0.1` だけ）                             |
 | **`prompt()` を `config.ts` へ移さない**                                | `config.ts` はテストから import されるため、読み込み時に stdin をブロックしてはならない。対話は `src/index.ts` に閉じる                                                     |
 
 ## エンドポイント仕様（Worker）
 
-### `POST /apps/refrain/upload`
+### `POST /upload`
 
 | ヘッダ / フィールド     | 値                      |
 | ----------------------- | ----------------------- |
@@ -102,14 +102,16 @@ monorepo 取り込み時に決めた、壊しやすい取り決め。
 | Content-Type            | `multipart/form-data`   |
 | `imagedata`（フォーム） | PNG バイナリ            |
 
-- 成功時: `200 OK`、`text/plain` で `https://{DOMAIN}/apps/refrain/i/<hash>.png\n` を 1 行返す。
-- 認証失敗: `401 Unauthorized`。
+- 成功時: `200 OK`、`text/plain` で `https://{DOMAIN}/i/<hash>.png\n` を 1 行返す。
+- 認証失敗: `401 Unauthorized`。トークンは両方を SHA-256 にかけてから定数時間で比較する（長さも漏らさない）。
+- 20 MB を超える画像: `413 Payload Too Large`（`Content-Length` で本体を読む前にも判定する）。
+- PNG でない内容: `415 Unsupported Media Type`（先頭 8 バイトのシグネチャで判定）。
 - 同じ画像を 2 回送ると同じ URL が返る（`<hash>` ベースの冪等性）。
 
-### `GET /apps/refrain/i/:hash.png`
+### `GET /i/:hash.png`
 
 - `:hash` は `[0-9a-f]{32}` でバリデーション。不一致は `404`。
-- 該当オブジェクトを R2 から取得し、`content-type: image/png`、`cache-control: public, max-age=31536000, immutable` で返す。
+- 該当オブジェクトを R2 から取得し、`content-type: image/png`、`cache-control: public, max-age=31536000, immutable`、`x-content-type-options: nosniff` で返す。
 - 見つからなければ `404`。
 
 ## CLI 仕様
@@ -127,7 +129,7 @@ refrain --no-copy          # pbcopy にコピーしない
 2. `~/.config/refrain/config.json` の `endpoint`
 3. 対話プロンプト（どちらも無い場合。入力値は config.json に保存される）
 
-環境変数が設定されている場合は config.json を書き換えずにそちらが優先される。`{DOMAIN}` プレースホルダを含む値はいずれの経路でも拒否される。
+環境変数が設定されている場合は config.json を書き換えずにそちらが優先される。どの経路でも、`https:` の URL でない値は拒否される（`http:` は `wrangler dev` 用に `localhost`・`127.0.0.1` だけ許す）。`{DOMAIN}` プレースホルダが残った値もここで拒否される。
 
 処理フロー:
 
@@ -145,26 +147,19 @@ refrain --no-copy          # pbcopy にコピーしない
 
 ## 運用セットアップ（Cloudflare 側）
 
-実運用するまでのチェックリスト。`{DOMAIN}` は使うドメインに読み替える。
+`{DOMAIN}` は Refrain 専用のホスト名（サブドメイン）に読み替える。親のドメインは Cloudflare に登録済み（zone が active）である前提。
 
-**Worker は既に本番稼働中**（monorepo 取り込み前に手動デプロイ済み）。残作業は CI からの自動デプロイを有効化する最終項目のみ。
-
-- [x] `{DOMAIN}` のネームサーバーを Cloudflare に委譲（`dig NS {DOMAIN}` が `*.ns.cloudflare.com` を返すことで確認）
-- [x] Cloudflare R2 を有効化（無料枠: ストレージ 10 GB/月、Class A 操作 1M/月、Class B 10M/月）
-- [x] R2 バケット `refrain` を作成（未存在ハッシュへの GET が 404 を返すことで疎通確認）
-- [x] `{DOMAIN}` の apex にプロキシ有効（オレンジ雲 ON）の A レコードを追加（`dig A {DOMAIN}` が Cloudflare の proxy IP を返すことで確認）
-- [x] `wrangler login` で Cloudflare 認証（`wrangler` は `refrain-worker` の devDependency なので個別インストールは不要）
-- [x] `openssl rand -hex 32` でトークンを生成し、`wrangler secret put UPLOAD_TOKEN` で Worker に登録（認証なし POST が 401 を返すことで確認）
-- [x] 同じトークン値を `~/.config/refrain/token`（chmod 600）に配置（CLI 側）
-- [ ] **GitHub Actions に `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` / `REFRAIN_ROUTE` の secrets を登録**（`REFRAIN_ROUTE` は `{DOMAIN}/apps/refrain/*`）。未登録のうちは `.github/workflows/deploy-refrain.yml` が失敗するため、登録するまで main にマージしない
+- [ ] R2 バケット `refrain` を作成（R2 の有効化が必要。無料枠: ストレージ 10 GB/月、Class A 操作 1M/月、Class B 10M/月）
+- [ ] `wrangler login` で Cloudflare 認証（`wrangler` は `refrain-worker` の devDependency なので個別インストールは不要）
+- [ ] 手元から初回デプロイ（下の「1. Worker デプロイ」）。Custom Domain の DNS レコードと証明書は Cloudflare が自動で作る。新しい Worker を作るには Workers の Admin 権限が要るので、初回だけ手元から行う
+- [ ] `openssl rand -hex 32` でトークンを生成し、`wrangler secret put UPLOAD_TOKEN` で Worker に登録。同じ値を `~/.config/refrain/token`（chmod 600）に置く
+- [ ] CI 用の API トークンを発行する。権限は Account の **Workers Editor**（Worker の更新）と、親ドメインの zone の **Workers Routes Write**（Custom Domain の維持）だけ（[Workers authorization](https://developers.cloudflare.com/workers/authorization/workers/)）
+- [ ] GitHub Actions の secrets に `CLOUDFLARE_API_TOKEN`・`CLOUDFLARE_ACCOUNT_ID`・`REFRAIN_DOMAIN`（`{DOMAIN}` の値）を登録する。未登録だと `.github/workflows/deploy-refrain.yml` は失敗する
+- [ ] 疎通確認: 認証なしの `POST https://{DOMAIN}/upload` が 401、CLI でのアップロードが Image URL を返し、その URL の GET が画像を返す
 
 > **`vars` ではなく `secrets` を使うこと。** Repository variables はワークフローログに平文で出力されるが、secrets は自動的にマスクされる。
 
-> `wrangler.toml` に `[[routes]]` は書かない。ルートは deploy 時に `--routes` で注入する。ローカルから手動デプロイする場合も同様:
->
-> ```bash
-> bun run --filter refrain-worker deploy -- --routes "{DOMAIN}/apps/refrain/*"
-> ```
+> `wrangler.toml` に Custom Domain は書かない。ホスト名は deploy 時に `--domain` で渡す。`workers_dev` と `preview_urls` は無効にしてあり、`*.workers.dev` では受けない。
 
 ## セットアップ手順
 
@@ -174,10 +169,12 @@ refrain --no-copy          # pbcopy にコピーしない
 
 ```bash
 bun install
-bun run --filter refrain-worker deploy -- --routes "{DOMAIN}/apps/refrain/*"
+bunx turbo run deploy --filter=refrain-worker -- --domain "{DOMAIN}"
 ```
 
-ローカル検証だけなら `--dry-run` を付ける（ルート指定も Cloudflare 認証も不要）:
+turbo の `deploy` タスクは、先に `refrain-worker` のテストを実行する。
+
+ローカル検証だけなら `--dry-run` を付ける（ドメインの指定も Cloudflare 認証も不要）:
 
 ```bash
 bunx wrangler deploy --dry-run --config apps/refrain/worker/wrangler.toml
@@ -185,7 +182,7 @@ bunx wrangler deploy --dry-run --config apps/refrain/worker/wrangler.toml
 
 ### 2. CLI セットアップ
 
-> 実アップロードは **1. Worker デプロイ** 完了 + 独自ドメインの DNS 有効化が前提。CLI 自体のビルドと `refrain --help` はオフラインでも完結する。
+> 実アップロードは **1. Worker デプロイ** の完了が前提。CLI 自体のビルドと `refrain --help` はオフラインでも完結する。
 
 バイナリをビルドして `~/bin/` に配置する。Apple Silicon の場合:
 
@@ -199,7 +196,7 @@ mv apps/refrain/cli/dist/refrain ~/bin/
 初回起動時にエンドポイントとトークンパスを対話で聞かれる。プロンプトを出したくない場合は環境変数を使う:
 
 ```bash
-REFRAIN_ENDPOINT="https://{DOMAIN}/apps/refrain/upload" ~/bin/refrain
+REFRAIN_ENDPOINT="https://{DOMAIN}/upload" ~/bin/refrain
 ```
 
 `~/bin` が PATH に通っていない場合は一度だけ追加する:
@@ -275,15 +272,15 @@ bun run --filter refrain-worker dev
 # 別ターミナルで:
 
 # 401 を確認
-curl -i -X POST http://127.0.0.1:8787/apps/refrain/upload -F imagedata=@test.png
+curl -i -X POST http://127.0.0.1:8787/upload -F imagedata=@test.png
 
 # 200 + URL を確認
-curl -X POST http://127.0.0.1:8787/apps/refrain/upload \
+curl -X POST http://127.0.0.1:8787/upload \
   -H "Authorization: Bearer $UPLOAD_TOKEN" \
   -F imagedata=@test.png
 
 # 返却 URL の画像を取得
-curl -o roundtrip.png "http://127.0.0.1:8787/apps/refrain/i/<hash>.png"
+curl -o roundtrip.png "http://127.0.0.1:8787/i/<hash>.png"
 diff test.png roundtrip.png  # 一致すること
 
 # 同じ画像を 2 回送って同じ URL が返ることを確認（冪等性）

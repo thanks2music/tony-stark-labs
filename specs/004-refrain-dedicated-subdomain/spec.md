@@ -4,21 +4,21 @@ Related: [plan.md](./plan.md), [tasks.md](./tasks.md), [specs/003-refrain-import
 
 ## 目的
 
-取り込み時点の Refrain は、独自ドメインの apex の下（`{DOMAIN}/apps/refrain/*`）に Workers の Route で載せる前提だった。しかしその Worker と R2 バケットはもう存在しない。新しく取得したドメインの**専用サブドメイン**（以下 `{SHOTS_HOST}`）に、Workers の **Custom Domain** で載せ直し、Mac からアップロードできる状態に戻す。
+取り込み時点の Refrain は、以前のドメインの apex の下（`/apps/refrain/*`）に Workers の Route で載せる前提だった。しかしその Worker と R2 バケットはもう存在しない。新しく取得したドメインの**専用サブドメイン**（以下 `{DOMAIN}`。Refrain 専用のホスト名）に、Workers の **Custom Domain** で載せ直し、Mac からアップロードできる状態に戻す。
 
 あわせて、取り込み時のレビューで後回しにした、アップロード経路の守りと CLI の不具合を直す。
 
 ## ユーザーストーリー
 
-- CEO として、Mac のホットキーで撮ったスクリーンショットが `{SHOTS_HOST}` にアップロードされ、Image URL がクリップボードに入る
+- CEO として、Mac のホットキーで撮ったスクリーンショットが `{DOMAIN}` にアップロードされ、Image URL がクリップボードに入る
 - CEO として、main にマージすると、テストを通った Worker だけが自動でデプロイされる
-- CEO として、公開リポジトリに `{SHOTS_HOST}` を書かずに運用できる
+- CEO として、公開リポジトリに `{DOMAIN}` を書かずに運用できる
 
 ## 受け入れ条件
 
 ### Worker
 
-- `POST /upload` で受け付け、Image URL は `https://{SHOTS_HOST}/i/<hash>.png` になる（パスの前置き `/apps/refrain` を外す）
+- `POST /upload` で受け付け、Image URL は `https://{DOMAIN}/i/<hash>.png` になる（パスの前置き `/apps/refrain` を外す）
 - 20 MB を超えるアップロードは 413 を返す（`Content-Length` で本体を読む前に判定し、届いた本体の大きさでも判定する）
 - PNG でない内容（先頭 8 バイトが PNG のシグネチャでない）は 415 を返す
 - 画像の配信に `X-Content-Type-Options: nosniff` を付ける
@@ -40,7 +40,7 @@ Related: [plan.md](./plan.md), [tasks.md](./tasks.md), [specs/003-refrain-import
 ### 運用（リポジトリの外）
 
 - R2 バケット `refrain` があり、Worker から読み書きできる
-- `{SHOTS_HOST}` で、認証なしの POST が 401、正しいトークンでのアップロードが 200 と Image URL、その URL の GET が画像を返す
+- `{DOMAIN}` で、認証なしの POST が 401、正しいトークンでのアップロードが 200 と Image URL、その URL の GET が画像を返す
 
 ## スコープ外
 
