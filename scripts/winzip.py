@@ -3,7 +3,8 @@
 
 - 非 ASCII の名前には UTF-8 フラグ（bit 11）が付く（Python の zipfile の仕様）
 - 格納名を NFC に正規化する（macOS の NFD による濁点の分離を直す）
-- .DS_Store / ._* / __MACOSX などは入れない
+- .DS_Store / ._* / __MACOSX などは入れない。除外した結果、中身が無くなったフォルダは空フォルダとして残す
+- シンボリックリンク（ファイルもフォルダも）は入れない
 - 書き出しは一時ファイル（.<name>.zip.part）に行い、成功したときだけ <name>.zip に置き換える。
   途中で失敗しても壊れた ZIP は残らない
 """
@@ -35,17 +36,22 @@ def zip_dir(src: Path) -> None:
             tmp, 'w', zipfile.ZIP_DEFLATED, compresslevel=6, strict_timestamps=False
         ) as z:
             for root, dirs, files in os.walk(src):
-                dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)
+                dirs[:] = sorted(
+                    d for d in dirs if d not in SKIP_DIRS and not Path(root, d).is_symlink()
+                )
                 rel_root = Path(root).relative_to(src.parent)
-                if not files and not dirs:  # 空フォルダも保持
+                kept = [
+                    f
+                    for f in sorted(files)
+                    if f not in SKIP_FILES
+                    and not f.startswith('._')
+                    and not Path(root, f).is_symlink()
+                ]
+                # 除外した結果、中身が無くなったフォルダも空フォルダとして残す
+                if not kept and not dirs:
                     z.writestr(nfc(rel_root.as_posix()) + '/', b'')
-                for f in sorted(files):
-                    if f in SKIP_FILES or f.startswith('._'):
-                        continue
-                    p = Path(root, f)
-                    if p.is_symlink():
-                        continue
-                    z.write(p, nfc((rel_root / f).as_posix()))
+                for f in kept:
+                    z.write(Path(root, f), nfc((rel_root / f).as_posix()))
         os.replace(tmp, out)
     except BaseException:
         tmp.unlink(missing_ok=True)
