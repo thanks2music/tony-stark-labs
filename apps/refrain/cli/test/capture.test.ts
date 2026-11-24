@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { computeNormalizedSize, parseSipsValue } from '../src/capture';
+import { computeNormalizedSize, interpretCapture, parseSipsValue } from '../src/capture';
 
 describe('parseSipsValue', () => {
   it('parses an integer value', () => {
@@ -104,5 +104,19 @@ describe('computeNormalizedSize', () => {
         dpiHeight: 96,
       }),
     ).toEqual({ width: 1280, height: 1080 });
+  });
+});
+
+describe('interpretCapture', () => {
+  it('is captured when screencapture exits 0 and wrote the file', () => {
+    expect(interpretCapture(0, true)).toBe('captured');
+  });
+
+  it('is cancelled when screencapture exits 0 without a file (Esc or a click away)', () => {
+    expect(interpretCapture(0, false)).toBe('cancelled');
+  });
+
+  it('throws when screencapture exits non-zero', () => {
+    expect(() => interpretCapture(1, false)).toThrow(/screencapture exited with code 1/);
   });
 });

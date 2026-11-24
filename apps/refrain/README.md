@@ -133,7 +133,7 @@ refrain --no-copy          # pbcopy にコピーしない
 処理フロー:
 
 1. 上記の順序で `endpoint` を解決し、`tokenPath` を `~/.config/refrain/config.json` から読む。
-2. 引数にファイルパスがあればそれを、なければ `screencapture -i /tmp/refrain-<pid>.png` で矩形選択 UI を起動。
+2. 引数にファイルパスがあればそれを、なければ `screencapture -i "$TMPDIR/refrain-<pid>-<timestamp>.png"` で矩形選択 UI を起動。Esc などで選択を取り消した場合は、何も出力せずに exit 0 で終わる（ショートカット.app にエラーの通知を出さない）。
 3. `sips` で 72dpi 換算（Retina ディスプレイでの論理解像度保持。[Gyazo 公式 macOS クライアント](https://github.com/gyazo/Gyazo)の `Gyazo/script` から移植）。
 4. `fetch` で `imagedata` を multipart POST。`Authorization: Bearer <token>` を添える。
 5. 非 2xx は stderr にエラー出力して exit 1。
@@ -262,7 +262,7 @@ Alfred の **Hotkey Trigger** → **Run Script** で `$HOME/bin/refrain` を実�
 - **Raycast / Alfred 経由**: 同様に呼び出し元アプリが許可対象
 - **システム設定 → プライバシーとセキュリティ → 画面収録** で手動追加も可能
 
-許可後、macOS の要求でアプリ再起動が必要な場合あり。失敗例として「矩形選択 UI は出るが保存された PNG が真っ黒」は権限未付与の典型症状。
+許可後、macOS の要求でアプリ再起動が必要な場合あり。失敗例として「矩形選択 UI は出るが保存された PNG が真っ黒」は権限未付与の典型症状。範囲を選んだのに何もアップロードされず、エラーも出ない場合も、まず権限を確認する（`refrain` は、ファイルが作られずに終わった `screencapture` を取り消しとみなして黙って終わるため）。
 
 ## ローカル検証
 

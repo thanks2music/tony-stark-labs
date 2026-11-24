@@ -25,6 +25,8 @@ Arguments:
   FILE            Optional path to an existing PNG image to upload.
                   The server accepts PNG only.
 
+Cancelling the selection (Esc) exits 0 with no output.
+
 Options:
   --open          Open the uploaded URL in the default browser.
   --no-copy       Do not copy the URL to the clipboard.
@@ -56,7 +58,8 @@ function parseCliArgs(argv: string[]): CliOptions | 'help' {
   return {
     open: values.open ?? false,
     noCopy: values['no-copy'] ?? false,
-    file: positionals[0],
+    // An empty argument (e.g. an unset "$FILE" in a wrapper) means "capture".
+    file: positionals[0] || undefined,
   };
 }
 
@@ -113,6 +116,9 @@ async function main(argv: string[]): Promise<number> {
 
   const captured = parsed.file === undefined;
   const imagePath = parsed.file ?? (await captureInteractive());
+  // Cancelling the selection (Esc) is not an error: exit quietly so that the
+  // Shortcuts app shows no failure notification.
+  if (imagePath === null) return 0;
 
   // Everything after the capture runs inside try, so the temporary screenshot is
   // removed even when normalizeDpi fails.

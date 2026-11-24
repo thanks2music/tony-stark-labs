@@ -1,3 +1,4 @@
+import { unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -52,15 +53,33 @@ function spawnChecked<S extends 'pipe' | 'ignore'>(cmd: string[], stdout: S) {
   return Object.assign(proc, { checked });
 }
 
-export async function captureInteractive(): Promise<string> {
-  const tmpfile = join(tmpdir(), `refrain-${process.pid}-${Date.now()}.png`);
-  const proc = Bun.spawn(['screencapture', '-i', tmpfile]);
-  await proc.exited;
-  const file = Bun.file(tmpfile);
-  if (!(await file.exists())) {
-    throw new Error('screencapture cancelled or failed');
+type CaptureOutcome = 'captured' | 'cancelled';
+
+/**
+ * Classifies a finished `screencapture -i`.
+ *
+ * Pressing Esc (or clicking away) ends it with exit code 0 and no file, which is
+ * a normal cancel, not an error. Only a non-zero exit is a failure.
+ */
+export function interpretCapture(exitCode: number, fileExists: boolean): CaptureOutcome {
+  if (exitCode !== 0) {
+    throw new Error(`screencapture exited with code ${exitCode}`);
   }
-  return tmpfile;
+  return fileExists ? 'captured' : 'cancelled';
+}
+
+/** Captures a region interactively. Returns `null` when the user cancels. */
+export async function captureInteractive(): Promise<string | null> {
+  const tmpfile = join(tmpdir(), `refrain-${process.pid}-${Date.now()}.png`);
+  const exitCode = await Bun.spawn(['screencapture', '-i', tmpfile]).exited;
+  const fileExists = await Bun.file(tmpfile).exists();
+  try {
+    return interpretCapture(exitCode, fileExists) === 'captured' ? tmpfile : null;
+  } catch (err) {
+    // A failed run may still have written the screenshot; do not leave it behind.
+    if (fileExists) await unlink(tmpfile).catch(() => undefined);
+    throw err;
+  }
 }
 
 export async function normalizeDpi(path: string): Promise<void> {
