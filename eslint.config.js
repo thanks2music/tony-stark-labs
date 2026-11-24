@@ -1,8 +1,9 @@
 // ESLint は型情報を使うルールだけを担当する。それ以外の lint と format は Biome（biome.json）。
 // 分担の理由は docs/adr/0001-biome-with-type-aware-eslint.md。
+import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config(
+export default defineConfig(
   {
     // 各 workspace は `eslint src test` を実行する。生成物と、lint-staged に渡りうるアーカイブだけ除外する
     ignores: ['**/worker-configuration.d.ts', 'archive/**'],

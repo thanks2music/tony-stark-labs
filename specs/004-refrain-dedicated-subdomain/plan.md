@@ -1,5 +1,8 @@
 # Plan 004: 専用サブドメインへの移行と、アップロード経路の守り
 
+> [!NOTE]
+> この spec のあと、Workers のテストは `@cloudflare/vitest-plugin`（旧 `@cloudflare/vitest-pool-workers`）に移り、Vitest は `refrain-worker` に宣言するようになった。今の構成は AGENTS.md を参照。
+
 Related: [spec.md](./spec.md), [tasks.md](./tasks.md)
 
 ## 変更対象
