@@ -15,7 +15,7 @@ export default tseslint.config(
       '**/worker-configuration.d.ts',
       '**/vitest.config.*',
       '**/vite.config.*',
-      'apps/mail-to-gcal/scripts/**',
+      'archive/**',
     ],
   },
   js.configs.recommended,

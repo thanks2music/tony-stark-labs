@@ -1,5 +1,22 @@
 # Mail to Google Calendar
 
+> [!WARNING]
+> **アーカイブ済み（運用停止）。** このアプリはもう使っておらず、tony-stark-labs の workspace・CI・lint の対象から外している。
+> AI エージェントは、このディレクトリのコードを変更しないこと。また、ほかのアプリを実装するときの参考や基準にしないこと。
+> 当時のまま残している記録で、依存のバージョンや設定はリポジトリの現在の方針（AGENTS.md）と食い違っている。
+> アーカイブ時に変えたのは、公開リポジトリに個人の識別子を残さないための 2 点だけ。
+> - `package.json` の `deploy:process`: カレンダー ID の直書きを環境変数 `GOOGLE_CALENDAR_ID` に置き換えた。値は `…@group.calendar.google.com` まで含めた ID 全体で、未設定なら失敗する。実行前に `export GOOGLE_CALENDAR_ID=...` する
+> - この README の手順にあった手元の絶対パスを、プレースホルダーに置き換えた
+
+## 既知の問題（運用停止時点で未修正）
+
+2026-11 のコードレビューで見つかったが、運用を止めたため直していない。
+
+- 対象外の送信元や解析に失敗したメールに `AddToCalendar` ラベルが残り続け、毎回の通知で再処理される。取得件数が 10 件なので、それが 10 件たまると新しいメールが処理されない
+- AI が時差のない日時（`2026-04-07T12:00:00`）を返すと、GCF の UTC として解釈され、予定が 9 時間ずれる
+- AI の応答で `url` が `null` などのとき、そのメールの予定がすべて登録されない
+- Doorkeeper の日をまたぐイベント（22:00〜01:00）の長さが 60 分になる
+
 本リポジトリでは、Connpassや、EventHub、Findyなどで開催される「オンライン勉強会」の予定を、
 申し込んだ確認メールから、日時を抽出して、自身のGoogleカレンダーに追加する機能を開発する。
 
@@ -187,7 +204,7 @@ mail-to-google-calendar/
 
 ```bash
 # メインリポジトリのルートで実行
-cd /Users/yoshi/work/dev/my-projects/mail-to-google-calendar
+cd <mail-to-google-calendar のクローン先>
 
 # ブランチ + worktreeを同時に作成
 git worktree add .claude/worktrees/<作業名> -b <ブランチ名>
@@ -218,7 +235,7 @@ git commit -m "feat: ..."
 
 ```bash
 # 1. メインリポジトリに戻る
-cd /Users/yoshi/work/dev/my-projects/mail-to-google-calendar
+cd <mail-to-google-calendar のクローン先>
 
 # 2. mainブランチでマージ
 git merge <ブランチ名>

@@ -25,26 +25,27 @@
 
 ## 技術スタック
 
-| 層                       | 採用                                           |
-| ------------------------ | ---------------------------------------------- |
-| Package Manager          | Bun (`packageManager: bun@1.3.2`)              |
-| タスクランナー           | Turborepo 2.x                                  |
-| ランタイム               | Bun 1.3.2 / Node.js 24.14.0                    |
-| 言語                     | TypeScript 6                                   |
-| Lint / Format            | ESLint 9 (flat config) / Prettier 3            |
-| Test                     | Vitest（Workers / Node）・bun:test（Bun 専用） |
-| Git Hook                 | husky + lint-staged + commitlint               |
-| ランタイムバージョン管理 | `.tool-versions` (mise / asdf)                 |
+| 層                       | 採用                                    |
+| ------------------------ | --------------------------------------- |
+| Package Manager          | Bun (`packageManager: bun@1.3.2`)       |
+| タスクランナー           | Turborepo 2.x                           |
+| ランタイム               | Bun 1.3.2 / Node.js 24.14.0             |
+| 言語                     | TypeScript 6                            |
+| Lint / Format            | ESLint 9 (flat config) / Prettier 3     |
+| Test                     | Vitest（Workers）・bun:test（Bun 専用） |
+| Git Hook                 | husky + lint-staged + commitlint        |
+| ランタイムバージョン管理 | `.tool-versions` (mise / asdf)          |
 
 ## ディレクトリ構造
 
 ```
 tony-stark-labs/
 ├── apps/                    # 各アプリ
-│   ├── refrain/             # CF Workers + R2 + macOS CLI 画像アップロードシステム
-│   │   ├── worker/          # workspace: refrain-worker (Cloudflare Workers, Vitest)
-│   │   └── cli/             # workspace: refrain-cli (Bun compiled binary, bun:test)
-│   └── mail-to-gcal/        # Gmail → Google Calendar 自動登録 (GCF 2nd gen, Vitest)
+│   └── refrain/             # CF Workers + R2 + macOS CLI 画像アップロードシステム
+│       ├── worker/          # workspace: refrain-worker (Cloudflare Workers, Vitest)
+│       └── cli/             # workspace: refrain-cli (Bun compiled binary, bun:test)
+├── archive/                 # 運用を止めたアプリ（workspace・CI・lint の対象外）
+│   └── mail-to-gcal/        # Gmail → Google Calendar 自動登録 (GCF 2nd gen)
 ├── packages/                # 共有ライブラリ（初期は空）
 ├── tools/                   # 開発スクリプト
 ├── specs/                   # SDD 成果物 (NNN-<slug>/spec.md, plan.md, tasks.md)
@@ -63,7 +64,7 @@ tony-stark-labs/
 | ツール       | バージョン                     | 備考                                  |
 | ------------ | ------------------------------ | ------------------------------------- |
 | Bun          | `>=1.3` (cf. `.tool-versions`) | Package manager / ランタイム          |
-| Node.js      | `>=22` (cf. `.tool-versions`)  | GCF 互換のため 22 以上                |
+| Node.js      | `>=22` (cf. `.tool-versions`)  | wrangler・tsc・ESLint などの実行用    |
 | mise or asdf | 最新                           | `.tool-versions` でバージョンを揃える |
 
 ```bash
@@ -88,11 +89,11 @@ bun run format:check    # prettier --check .
 # 特定 workspace のみ
 bun run --filter <name> <script>
 # 例:
-bun run --filter mail-to-gcal test
+bun run --filter refrain-worker test
 bun run --filter refrain-worker dev
 
 # Turbo フィルタ（依存も含めて解決される）
-turbo run test --filter=mail-to-gcal
+turbo run test --filter=refrain-worker
 turbo run build --filter=...[HEAD^1]   # 変更 workspace とその依存のみ
 ```
 
@@ -143,7 +144,6 @@ turbo run build --filter=...[HEAD^1]   # 変更 workspace とその依存のみ
 | --------------------- | ---------------------------------------------- | ---------------------------------------------------- |
 | `apps/refrain/worker` | **Vitest** + `@cloudflare/vitest-pool-workers` | Workers ランタイムの再現は Vitest 専用 pool が必須   |
 | `apps/refrain/cli`    | **bun:test**                                   | `Bun.spawn` / `bun build --compile` とランタイム一致 |
-| `apps/mail-to-gcal`   | **Vitest**                                     | GCF Node22 本番ランタイムと整合                      |
 | `packages/*`          | **Vitest** 既定                                | 両ランタイムから import されうる標準寄り             |
 
 Vitest は root の devDependencies に **v4** で一本化している。`@cloudflare/vitest-pool-workers` の peerDependencies が `vitest: ^4.1.0` を要求するため、v3 へ戻すと `refrain-worker` のテストが起動しない。
@@ -174,7 +174,7 @@ Vitest は root の devDependencies に **v4** で一本化している。`@clou
 | `ci`       | CI 設定                            |
 | `perf`     | パフォーマンス改善                 |
 
-**scope** の例: `refrain`, `mail-to-gcal`, `root`, `ci`, `deps`
+**scope** の例: `refrain`, `root`, `ci`, `deps`
 
 **subject の大文字小文字**: commitlint のデフォルト設定により、subject は sentence-case / start-case / pascal-case / upper-case を禁止する。文頭は lowercase で開始し、proper noun（`Bun`, `Turborepo` など）は中間で大文字のまま使用できる。
 
@@ -194,11 +194,11 @@ Vitest は root の devDependencies に **v4** で一本化している。`@clou
 
 ## アプリ一覧と状態
 
-| アプリ           | 状態                | 技術                                      | ホスティング            |
-| ---------------- | ------------------- | ----------------------------------------- | ----------------------- |
-| `refrain`        | 取り込み済み        | Bun + CF Workers + R2 + macOS CLI         | Cloudflare Workers + R2 |
-| `mail-to-gcal`   | 取り込み済み        | Node.js 22 + functions-framework + Vitest | Google Cloud Functions  |
-| `internal-tools` | Phase 3（汎用化後） | 未定                                      | 未定                    |
+| アプリ           | 状態                     | 技術                                      | ホスティング            |
+| ---------------- | ------------------------ | ----------------------------------------- | ----------------------- |
+| `refrain`        | 取り込み済み             | Bun + CF Workers + R2 + macOS CLI         | Cloudflare Workers + R2 |
+| `mail-to-gcal`   | アーカイブ（`archive/`） | Node.js 22 + functions-framework + Vitest | （運用停止）            |
+| `internal-tools` | Phase 3（汎用化後）      | 未定                                      | 未定                    |
 
 `refrain` は `refrain-worker` / `refrain-cli` の 2 workspace に分かれる。詳細は [apps/refrain/README.md](./apps/refrain/README.md)。
 

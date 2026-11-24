@@ -1,5 +1,8 @@
 # Plan 002: `apps/mail-to-gcal` Phase 1b 実装方針
 
+> [!WARNING]
+> **アーカイブ済みの当時の記録。** コードは `archive/mail-to-gcal/` へ移した（文中の `apps/mail-to-gcal` も同じ）。扱いは AGENTS.md の「アーカイブ」節に従い、ここに書かれた手順やタスクは実行しない。
+
 Related: [spec.md](./spec.md), [tasks.md](./tasks.md)
 
 ## アーキテクチャ変更点

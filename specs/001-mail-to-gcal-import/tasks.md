@@ -1,5 +1,8 @@
 # Tasks 001: `apps/mail-to-gcal` 取り込み作業手順
 
+> [!WARNING]
+> **アーカイブ済みの当時の記録。** コードは `archive/mail-to-gcal/` へ移した（文中の `apps/mail-to-gcal` も同じ）。扱いは AGENTS.md の「アーカイブ」節に従い、ここに書かれた手順やタスクは実行しない。
+
 以下のステップを順次実施する。各ステップは原則 1 commit に対応させる。
 
 ## 前提条件
@@ -11,9 +14,9 @@
 
 ### Step 1: subtree add
 
-- [x] `cd /Users/yoshi/work/dev/my-projects/tony-stark-labs`
+- [x] `cd <tony-stark-labs のクローン先>`
 - [x] `git pull --ff-only origin main`
-- [x] `git subtree add --prefix=apps/mail-to-gcal file:///Users/yoshi/work/dev/my-projects/mail-to-google-calendar main --squash -m "..."`
+- [x] `git subtree add --prefix=apps/mail-to-gcal file://<mail-to-google-calendar のクローン先> main --squash -m "..."`
 - [x] 検証: 機密ファイルが混入していないこと
 
 ### Step 2: 個別 bun.lock 削除

@@ -1,5 +1,8 @@
 # Tasks 002: `apps/mail-to-gcal` Phase 1b 作業手順
 
+> [!WARNING]
+> **アーカイブ済みの当時の記録。** コードは `archive/mail-to-gcal/` へ移した（文中の `apps/mail-to-gcal` も同じ）。扱いは AGENTS.md の「アーカイブ」節に従い、ここに書かれた手順やタスクは実行しない。
+
 Related: [spec.md](./spec.md), [plan.md](./plan.md)
 
 ## 前提条件

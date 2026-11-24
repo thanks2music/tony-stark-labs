@@ -9,3 +9,6 @@ build/
 coverage/
 bun.lock
 worker-configuration.d.ts
+
+# アーカイブ済みのアプリは当時のまま残す
+archive/

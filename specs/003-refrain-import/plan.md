@@ -1,5 +1,8 @@
 # Plan 003: `apps/refrain` 取り込み実装方針
 
+> [!NOTE]
+> この取り込みのあと、`mail-to-gcal` は運用を止めて `archive/` へ移した。文中で mail-to-gcal を現役の workspace として扱っている箇所は、当時の状態の記録。
+
 Related: [spec.md](./spec.md), [tasks.md](./tasks.md)
 
 ## 取り込み元の現状（調査で確定した事実）

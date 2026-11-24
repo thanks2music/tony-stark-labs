@@ -1,5 +1,8 @@
 # Spec 001: `apps/mail-to-gcal` monorepo 取り込み (Phase 1a)
 
+> [!WARNING]
+> **アーカイブ済みの当時の記録。** コードは `archive/mail-to-gcal/` へ移した（文中の `apps/mail-to-gcal` も同じ）。扱いは AGENTS.md の「アーカイブ」節に従い、ここに書かれた手順やタスクは実行しない。
+
 Next phase: [specs/002-mail-to-gcal-gcp-migration/spec.md](../002-mail-to-gcal-gcp-migration/spec.md)
 
 ## 目的
@@ -39,7 +42,7 @@ Next phase: [specs/002-mail-to-gcal-gcp-migration/spec.md](../002-mail-to-gcal-g
 - ルート `package.json`（devDependencies 昇格）
 - `eslint.config.js`（override 追加）
 - `bun.lock`（再生成）
-- 独立リポジトリ `/Users/yoshi/work/dev/my-projects/mail-to-google-calendar`（本 Phase では無変更。Phase 1b で移行後に archive 検討）
+- 独立リポジトリ `mail-to-google-calendar`（本 Phase では無変更。Phase 1b で移行後に archive 検討）
 
 ## 前提条件
 

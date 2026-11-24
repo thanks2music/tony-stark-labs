@@ -14,23 +14,21 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
 
 This repo is **multi-context**. Each app under `apps/` is its own context with an unrelated domain:
 
-| Context        | Path                 | Notes                                          |
-| -------------- | -------------------- | ---------------------------------------------- |
-| `refrain`      | `apps/refrain/`      | One context covering both `worker/` and `cli/` |
-| `mail-to-gcal` | `apps/mail-to-gcal/` |                                                |
+| Context   | Path            | Notes                                          |
+| --------- | --------------- | ---------------------------------------------- |
+| `refrain` | `apps/refrain/` | One context covering both `worker/` and `cli/` |
 
 ```
 /
 ├── GLOSSARY-MAP.md                    ← points at each context's GLOSSARY.md
 ├── docs/adr/                          ← system-wide decisions (toolchain, CI, monorepo layout)
 └── apps/
-    ├── refrain/
-    │   ├── GLOSSARY.md
-    │   └── docs/adr/                  ← context-specific decisions
-    └── mail-to-gcal/
+    └── refrain/
         ├── GLOSSARY.md
-        └── docs/adr/
+        └── docs/adr/                  ← context-specific decisions
 ```
+
+`archive/` holds retired apps and is not a context; ignore it when exploring.
 
 When a new app is added under `apps/`, it becomes a new context: add its row here and its entry in `GLOSSARY-MAP.md` once it has a glossary.
 

@@ -80,6 +80,10 @@ bun run lint && bun run format:check && bun run typecheck && bun run test
 - `docs/plan/`（設計メモ）と `**/docs/report/`（セッションの作業報告）は gitignore している。コミットしない
 - `experiments/` は、各ディレクトリの `README.md` だけを追跡する。素材や成果物はコミットしない
 
+## アーカイブ
+
+`archive/` には運用を止めたアプリを当時のまま置いている。workspace・CI・lint・format の対象外で、コードを変更しない（例外は、公開リポジトリに残してはいけない識別子の除去だけ）。ほかのアプリを実装するときの参考や基準にもしない。
+
 ## アプリの取り込み
 
 新しいアプリは `git subtree add --prefix=apps/<name> <remote-url> main --squash` で取り込む。取り込み後の手順（devDependencies の昇格・`tsconfig.base.json` への extends・ハードコード値の環境変数化）は README の「新しいアプリを追加する手順」を参照。
