@@ -64,12 +64,12 @@ bun run check && bun run lint && bun run typecheck && bun run test
 ### 依存は使う workspace に宣言する
 
 - Turborepo の方針どおり、依存はそれを使う workspace の `package.json` に宣言する。root に置くのは、リポジトリを管理するツール（turbo・husky・lint-staged・commitlint・Biome・ESLint と typescript-eslint）だけ（[Managing dependencies](https://turborepo.com/docs/crafting-your-repository/managing-dependencies)）
-- `tsc` を呼ぶ workspace は、それぞれ `typescript` を宣言する。root の `typescript` は typescript-eslint の peer dependency のために置いている
-- `vitest` は `refrain-worker` に宣言している。**v3 に戻さない**。`@cloudflare/vitest-pool-workers` の peerDependencies が `vitest: ^4.1.0` を要求するため、テストが起動しなくなる
+- `tsc` を呼ぶ workspace は、それぞれ `typescript` を宣言する。root の `typescript` は typescript-eslint の peer dependency のために置いている。**TypeScript 7 に上げない**: typescript-eslint の peerDependencies が `typescript: <6.1.0` で、型情報を使う ESLint が動かなくなる（typescript-eslint が対応したら上げる）
+- `vitest` は `refrain-worker` に宣言している。Workers のテストは `@cloudflare/vitest-plugin`（旧 `@cloudflare/vitest-pool-workers`。旧パッケージは非推奨で更新されない）で動かす。Vitest のメジャー版を上げるときは、`@cloudflare/vitest-plugin` の peerDependencies が対応しているかを先に確かめる
 
 ### refrain のその他の制約
 
-- `apps/refrain/worker/worker-configuration.d.ts` は `wrangler types` の生成物だが、typecheck に必要なので**意図して追跡している**。root の `.gitignore` は同名のファイルを無視するので、否定パターンで例外にしてある。再生成は `bun run --filter refrain-worker cf-typegen`。secret の型は `wrangler.toml` の `[secrets] required` から作られるので、secret を増やしたらそこにも足す（`.dev.vars` は要らない）
+- `apps/refrain/worker/worker-configuration.d.ts` は `wrangler types` の生成物だが、typecheck に必要なので**意図して追跡している**。root の `.gitignore` は同名のファイルを無視するので、否定パターンで例外にしてある。再生成は `bun run --filter refrain-worker cf-typegen`。secret の型は `wrangler.toml` の `[secrets] required` から作られるので、secret を増やしたらそこにも足す（型の生成に `.dev.vars` は要らない。`wrangler dev` で値を使うには引き続き `.dev.vars` に置く。`[secrets]` があると、`wrangler dev` は `required` に無い secret を `.dev.vars` から読み込まない）
 - `refrain-cli` の `build` は macOS 専用のバイナリ（約 60 MB）を作る。CI に `turbo run build` を足すときは `--filter=!refrain-cli` を付ける（今の CI は build を実行しない）
 - `worker/vitest.config.ts` が `wrangler.toml` を参照するので、`wrangler.toml` を gitignore に戻すと CI の `bun run test` が起動時に落ちる
 

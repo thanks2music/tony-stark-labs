@@ -27,7 +27,7 @@
 
 | 層                       | 採用                                                        |
 | ------------------------ | ----------------------------------------------------------- |
-| Package Manager          | Bun (`packageManager: bun@1.3.2`)                           |
+| Package Manager          | Bun（`packageManager` と `.tool-versions`）                 |
 | タスクランナー           | Turborepo 2.x                                               |
 | ランタイム               | Bun / Node.js LTS（バージョンは `.tool-versions`）          |
 | 言語                     | TypeScript 6                                                |
@@ -63,7 +63,7 @@ tony-stark-labs/
 
 | ツール       | バージョン                     | 備考                                  |
 | ------------ | ------------------------------ | ------------------------------------- |
-| Bun          | `>=1.3` (cf. `.tool-versions`) | Package manager / ランタイム          |
+| Bun          | `>=1.4` (cf. `.tool-versions`) | Package manager / ランタイム          |
 | Node.js      | cf. `.tool-versions`           | wrangler・tsc・ESLint などの実行用    |
 | mise or asdf | 最新                           | `.tool-versions` でバージョンを揃える |
 
@@ -140,13 +140,13 @@ turbo run build --filter=...[HEAD^1]   # 変更 workspace とその依存のみ
 
 ## テストツール棲み分け
 
-| Workspace             | Runner                                         | 理由                                                 |
-| --------------------- | ---------------------------------------------- | ---------------------------------------------------- |
-| `apps/refrain/worker` | **Vitest** + `@cloudflare/vitest-pool-workers` | Workers ランタイムの再現は Vitest 専用 pool が必須   |
-| `apps/refrain/cli`    | **bun:test**                                   | `Bun.spawn` / `bun build --compile` とランタイム一致 |
-| `packages/*`          | **Vitest** 既定                                | 両ランタイムから import されうる標準寄り             |
+| Workspace             | Runner                                   | 理由                                                 |
+| --------------------- | ---------------------------------------- | ---------------------------------------------------- |
+| `apps/refrain/worker` | **Vitest** + `@cloudflare/vitest-plugin` | Workers ランタイムの再現は Vitest 専用 pool が必須   |
+| `apps/refrain/cli`    | **bun:test**                             | `Bun.spawn` / `bun build --compile` とランタイム一致 |
+| `packages/*`          | **Vitest** 既定                          | 両ランタイムから import されうる標準寄り             |
 
-Vitest は、使う workspace（いまは `refrain-worker`）の devDependencies に **v4** で宣言している。`@cloudflare/vitest-pool-workers` の peerDependencies が `vitest: ^4.1.0` を要求するため、v3 へ戻すと `refrain-worker` のテストが起動しない。
+Vitest は、使う workspace（いまは `refrain-worker`）の devDependencies に宣言している。Workers のテストに使う `@cloudflare/vitest-plugin` が対応する Vitest のメジャー版だけを使う（いまは v5）。
 
 ## Commit Convention
 

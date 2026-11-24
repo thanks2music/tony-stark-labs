@@ -44,7 +44,7 @@ apps/refrain/
 │   │   ├── index.ts           # ルーター + upload + 配信
 │   │   ├── storage.ts         # Storage interface + R2 実装（Phase 2 で S3 実装追加）
 │   │   └── hash.ts            # SHA-256 先頭 32 文字
-│   ├── test/                  # Vitest + @cloudflare/vitest-pool-workers
+│   ├── test/                  # Vitest + @cloudflare/vitest-plugin
 │   ├── wrangler.toml          # Custom Domain は持たない（deploy 時に --domain で渡す）
 │   ├── worker-configuration.d.ts  # wrangler types の生成物。typecheck に必須なので追跡する
 │   ├── vitest.config.ts
@@ -80,15 +80,15 @@ bun run --filter refrain-cli build         # macOS バイナリを cli/dist/refr
 
 monorepo 取り込み時に決めた、壊しやすい取り決め。
 
-| 制約                                                                    | 理由                                                                                                                                                                        |
-| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Vitest を v3 に下げない**                                             | `@cloudflare/vitest-pool-workers` の peerDependencies が `vitest: ^4.1.0`。下げると `refrain-worker` のテストが起動しない                                                   |
-| **`wrangler.toml` を gitignore に戻さない**                             | `worker/vitest.config.ts` が `configPath: './wrangler.toml'` を参照する。無いと CI の `bun run test` が起動時に落ちる                                                       |
-| **`wrangler.toml` に Custom Domain（`[[routes]]`）を書かない**          | 本リポジトリは Public。ホスト名は deploy 時に `--domain` で渡す（[ADR](./docs/adr/0001-keep-the-domain-out-of-the-repository.md)）                                          |
-| **`worker-configuration.d.ts` を消さない**                              | `wrangler types` の生成物だが typecheck に必須。root `.gitignore` は同名を無視するので `!apps/refrain/worker/worker-configuration.d.ts` で例外化済み。再生成は `cf-typegen` |
-| **`@cloudflare/vitest-pool-workers` / `wrangler` を root に昇格しない** | refrain 固有の依存であり、他 workspace には不要                                                                                                                             |
-| **CLI にドメインのデフォルト値を持たせない**                            | `REFRAIN_ENDPOINT` → config.json → 対話プロンプトの順で解決する。`https:` の URL でなければ拒否する（`http:` は `localhost`・`127.0.0.1` だけ）                             |
-| **`prompt()` を `config.ts` へ移さない**                                | `config.ts` はテストから import されるため、読み込み時に stdin をブロックしてはならない。対話は `src/index.ts` に閉じる                                                     |
+| 制約                                                              | 理由                                                                                                                                                                        |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Vitest のメジャー版は `@cloudflare/vitest-plugin` に合わせる**  | `@cloudflare/vitest-plugin` の peerDependencies（いまは `vitest: ^4.1.0 \|\| ^5.0.0`）の外に出ると、`refrain-worker` のテストが起動しない                                   |
+| **`wrangler.toml` を gitignore に戻さない**                       | `worker/vitest.config.ts` が `configPath: './wrangler.toml'` を参照する。無いと CI の `bun run test` が起動時に落ちる                                                       |
+| **`wrangler.toml` に Custom Domain（`[[routes]]`）を書かない**    | 本リポジトリは Public。ホスト名は deploy 時に `--domain` で渡す（[ADR](./docs/adr/0001-keep-the-domain-out-of-the-repository.md)）                                          |
+| **`worker-configuration.d.ts` を消さない**                        | `wrangler types` の生成物だが typecheck に必須。root `.gitignore` は同名を無視するので `!apps/refrain/worker/worker-configuration.d.ts` で例外化済み。再生成は `cf-typegen` |
+| **`@cloudflare/vitest-plugin` / `wrangler` を root に昇格しない** | refrain 固有の依存であり、他 workspace には不要                                                                                                                             |
+| **CLI にドメインのデフォルト値を持たせない**                      | `REFRAIN_ENDPOINT` → config.json → 対話プロンプトの順で解決する。`https:` の URL でなければ拒否する（`http:` は `localhost`・`127.0.0.1` だけ）                             |
+| **`prompt()` を `config.ts` へ移さない**                          | `config.ts` はテストから import されるため、読み込み時に stdin をブロックしてはならない。対話は `src/index.ts` に閉じる                                                     |
 
 ## エンドポイント仕様（Worker）
 
