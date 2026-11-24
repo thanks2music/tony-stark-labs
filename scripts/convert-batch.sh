@@ -2,36 +2,13 @@
 #
 # convert-batch.sh — 重い FFmpeg 変換を 1 本ずつ「順番に」実行するバッチ
 #
-# 使い方:
-#   ./convert-batch.sh [オプション] <変換元.mp4> [追加ファイル ...]
+# 使い方とオプションは `convert-batch.sh --help`、詳しい説明は scripts/README.md を参照。
 #
-# オプション（ファイル引数の前後どちらに置いてもよい）:
-#   -o, --output <DIR>     出力先ディレクトリ（既定: DEFAULT_OUTDIR / 環境変数 CONVERT_OUTDIR）
-#   --1080p                1080p のみ生成
-#   --720p                 720p のみ生成
-#   --both                 両方生成（デフォルト）
-#   -n, --dry-run          変換せず、生成予定のファイルだけ表示する
-#   -f, --force            既存の出力ファイルを上書きする
-#   -h, --help             この使い方を表示して終了
-#
-# 例（フルパス・スペース込みでも OK。必ずクォートで囲む）:
-#   ./convert-batch.sh "/Volumes/.../2026-06-04-NBA.mp4" "/Volumes/.../2026-06-05.mp4"
-#   ./convert-batch.sh --1080p "/path/A.mp4" "/path/B.mp4"
-#   ./convert-batch.sh --720p /path/to/*.mp4
-#   ./convert-batch.sh --dry-run -o ~/Movies/tmp "/path/A.mp4"
-#
-# 各入力につき OUTDIR に生成する（デフォルトは 2 本、フラグで片方だけも可）:
-#   ① 1080p / H265            …(1080p_H265).mp4
-#   ② 720p  / H265（モバイル用） …(720p_H265).mp4
-#
-# 同時実行はしない（& を付けないため、1 本終わるまで次を開始しない＝順次実行）。
-# 変換中は一時ファイル（.<name>.part.mp4）に書き出し、成功時のみ本来の名前へ mv する。
+# 同時実行はしない（1 本終わるまで次を開始しない＝順次実行）。
+# 変換中は一時ファイル（.<name>.part.mp4）に書き出し、検証に通ったときだけ本来の名前へ mv する。
 # そのため中断しても不完全な出力ファイルは残らない。
 #
 set -uo pipefail
-
-# ── 既定の出力先（年度が変わったらこの 1 行を変更する。--output でも上書き可） ──
-DEFAULT_OUTDIR='/Volumes/KeepTheFaith18TB/01. Video/01. NBA/2025-2026-Season'
 
 # ── エンコード設定 ────────────────────────────────────────────────────
 # エンコーダは libx265（ソフトウェア）固定。実測 約 53fps（1080p60 素材）で CPU バウンド。
@@ -50,7 +27,7 @@ usage() {
 
 出力:
   -o, --output <DIR>     出力先ディレクトリを指定する
-                         （優先順位: --output > 環境変数 CONVERT_OUTDIR > スクリプト内の既定値）
+                         （優先順位: --output > 環境変数 CONVERT_OUTDIR。どちらも無ければエラー）
 
 解像度:
   --1080p                1080p のみ生成
@@ -74,10 +51,9 @@ EOF
 }
 
 # ── 引数パース ───────────────────────────────────────────────────────
+# getopts は長いオプション（--1080p など）を扱えないため、while/case で読む。
 MAKE_1080P=1
 MAKE_720P=1
-SET_1080P_ONLY=0
-SET_720P_ONLY=0
 DRY_RUN=0
 FORCE=0
 OUTDIR=''
@@ -87,38 +63,34 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     --1080p)
       MAKE_720P=0
-      SET_1080P_ONLY=1
       shift
       ;;
     --720p)
       MAKE_1080P=0
-      SET_720P_ONLY=1
       shift
       ;;
     --both)
       MAKE_1080P=1
       MAKE_720P=1
-      SET_1080P_ONLY=0
-      SET_720P_ONLY=0
       shift
       ;;
-    -o|--output)
-      if [ "$#" -lt 2 ]; then
+    -o | --output)
+      if [ "$#" -lt 2 ] || [ -z "$2" ] || [ "${2#-}" != "$2" ]; then
         echo "エラー: $1 には出力先ディレクトリを指定してください。" >&2
         exit 1
       fi
       OUTDIR="$2"
       shift 2
       ;;
-    -n|--dry-run)
+    -n | --dry-run)
       DRY_RUN=1
       shift
       ;;
-    -f|--force)
+    -f | --force)
       FORCE=1
       shift
       ;;
-    -h|--help)
+    -h | --help)
       usage
       exit 0
       ;;
@@ -139,50 +111,76 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-if [ "$SET_1080P_ONLY" -eq 1 ] && [ "$SET_720P_ONLY" -eq 1 ]; then
+# --1080p は 720p を、--720p は 1080p を外すので、両方を指定すると何も残らない
+if [ "$MAKE_1080P" -eq 0 ] && [ "$MAKE_720P" -eq 0 ]; then
   echo "エラー: --1080p と --720p は同時指定できません。両方が必要なら --both を使ってください。" >&2
   exit 1
 fi
 
-# ── 出力先の解決（--output > CONVERT_OUTDIR > 既定値） ───────────────
-if [ -z "$OUTDIR" ]; then
-  OUTDIR="${CONVERT_OUTDIR:-$DEFAULT_OUTDIR}"
-fi
-OUTDIR="${OUTDIR%/}"
-
-# ── エンコード引数 ───────────────────────────────────────────────────
-ARGS_1080P=(-vcodec libx265 -b:v "$BITRATE_1080P")
-ARGS_720P=(-vcodec libx265 -preset fast -b:v "$BITRATE_720P")
-
-# ── 事前チェック ─────────────────────────────────────────────────────
 if [ "${#files[@]}" -eq 0 ]; then
   echo "使い方: $0 [オプション] <変換元.mp4> [追加ファイル ...]" >&2
   echo "       詳細は $0 --help" >&2
   exit 1
 fi
 
-if ! command -v ffmpeg >/dev/null 2>&1; then
-  echo "エラー: ffmpeg が見つかりません。'brew install ffmpeg' を実行してください。" >&2
+# ── 出力先の解決（--output > CONVERT_OUTDIR） ─────────────────────────
+# 出力先は手元のディスク構成に依存するので、スクリプトには既定値を持たせない。
+OUTDIR="${OUTDIR:-${CONVERT_OUTDIR:-}}"
+if [ -z "$OUTDIR" ]; then
+  echo "エラー: 出力先が決まっていません。--output で指定するか、環境変数 CONVERT_OUTDIR を設定してください。" >&2
   exit 1
 fi
+[ "$OUTDIR" != '/' ] && OUTDIR="${OUTDIR%/}"
 
-if ! ffmpeg -hide_banner -encoders 2>/dev/null | grep -q 'libx265'; then
-  echo "エラー: この ffmpeg は libx265 に対応していません。" >&2
-  echo "       'brew reinstall ffmpeg' で入れ直してください。" >&2
-  exit 1
-fi
-
-if ! command -v ffprobe >/dev/null 2>&1; then
-  echo "エラー: ffprobe が見つかりません（出力の検証に必要です）。" >&2
-  echo "       'brew install ffmpeg' を実行してください。" >&2
-  exit 1
+# ── 事前チェック（dry-run では、外付けボリュームが無くても予定を表示できるよう緩める） ──
+if [ "$DRY_RUN" -eq 0 ]; then
+  if ! command -v ffmpeg >/dev/null 2>&1; then
+    echo "エラー: ffmpeg が見つかりません。'brew install ffmpeg' を実行してください。" >&2
+    exit 1
+  fi
+  if ! ffmpeg -hide_banner -encoders 2>/dev/null | grep -q 'libx265'; then
+    echo "エラー: この ffmpeg は libx265 に対応していません。" >&2
+    echo "       'brew reinstall ffmpeg' で入れ直してください。" >&2
+    exit 1
+  fi
+  if ! command -v ffprobe >/dev/null 2>&1; then
+    echo "エラー: ffprobe が見つかりません（出力の検証に必要です）。" >&2
+    echo "       'brew install ffmpeg' を実行してください。" >&2
+    exit 1
+  fi
 fi
 
 if [ ! -d "$OUTDIR" ]; then
-  echo "エラー: 出力先が見つかりません: $OUTDIR" >&2
-  echo "       外付けボリュームがマウントされているか、--output の指定が正しいか確認してください。" >&2
-  exit 1
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "警告: 出力先が見つかりません（dry-run なので続行します）: $OUTDIR" >&2
+  else
+    echo "エラー: 出力先が見つかりません: $OUTDIR" >&2
+    echo "       外付けボリュームがマウントされているか、出力先の指定が正しいか確認してください。" >&2
+    exit 1
+  fi
 fi
+
+# ── 出力名 ───────────────────────────────────────────────────────────
+# ディレクトリと拡張子を除いたファイル名。
+# 末尾の `(WIDTHxHEIGHT)` 形式の解像度サフィックスだけを取り除く
+# （例: `YOUR-FILE-(1920x1080)` → `YOUR-FILE`）。直前の `-` / スペース / `_` も併せて除去する。
+output_name() { # <入力パス>
+  basename "${1%.*}" | sed -E 's/[-_ ]?\([0-9]+x[0-9]+\)$//'
+}
+
+# 解像度サフィックスを除くと同じ名前になる入力があると、出力が衝突する（後の入力がスキップ、
+# --force なら上書きされる）。変換を始める前に検出して止める。
+seen_names=$'\n'
+for f in "${files[@]}"; do
+  name="$(output_name "$f")"
+  case "$seen_names" in
+    *$'\n'"$name"$'\n'*)
+      echo "エラー: 出力名が重複する入力があります: ${name}（解像度サフィックスを除くと同じ名前になります）" >&2
+      exit 1
+      ;;
+  esac
+  seen_names+="${name}"$'\n'
+done
 
 # ── 中断時の一時ファイル掃除 ─────────────────────────────────────────
 CURRENT_TMP=''
@@ -195,7 +193,8 @@ cleanup_tmp() {
     echo "中断を検知しました。未完成の一時ファイルを削除しました: $(basename "$CURRENT_TMP")" >&2
   fi
 }
-trap 'cleanup_tmp; exit 130' INT TERM
+trap 'cleanup_tmp; exit 130' INT
+trap 'cleanup_tmp; exit 143' TERM
 
 # ── 出力の検証 ───────────────────────────────────────────────────────
 # 秒数を取り出す（取得できなければ空文字）
@@ -288,42 +287,51 @@ encode() {
     -tag:v hvc1 -acodec aac -b:a 128k -vf "scale=-2:${height}" "$tmp"; then
     if ! verify_output "$src" "$tmp"; then
       echo "  → ${label}: 出力が不完全なため破棄しました（ffmpeg は成功を返していますが信用できません）" >&2
-      rm -f "$tmp"
-      CURRENT_TMP=''
-      return 1
-    fi
-    if mv -f "$tmp" "$dst"; then
+    elif mv -f "$tmp" "$dst"; then
       CURRENT_TMP=''
       completed+=("$dst")
       return 0
+    else
+      echo "  → ${label}: 一時ファイルの移動に失敗しました（一時ファイルは削除します）: $dst" >&2
     fi
-    echo "  → ${label}: 一時ファイルの移動に失敗しました: $tmp" >&2
   else
     echo "  → ${label} の変換に失敗しました: $dst" >&2
-    rm -f "$tmp"
   fi
 
+  rm -f "$tmp"
   CURRENT_TMP=''
   return 1
 }
 
-# plan_line <出力パス> — dry-run で 1 行分の予定を表示する
-plan_line() {
-  local dst="$1"
+# convert_target <ラベル> <入力> <出力> <高さ> <エンコーダ引数...>
+# 既存の出力は --force が無ければスキップする。dry-run では予定を 1 行表示するだけ。
+convert_target() {
+  local label="$1" dst="$3"
   if [ -f "$dst" ] && [ "$FORCE" -eq 0 ]; then
-    echo "      スキップ（既存）: $(basename "$dst")   ※ --force で上書き"
-  elif [ -f "$dst" ]; then
-    echo "      上書き生成      : $(basename "$dst")"
-  else
-    echo "      生成            : $(basename "$dst")"
+    if [ "$DRY_RUN" -eq 1 ]; then
+      echo "      スキップ（既存）: $(basename "$dst")   ※ --force で上書き"
+    else
+      echo "  → ${label} は既に存在するためスキップ: $dst"
+      completed+=("$dst")
+    fi
+    return 0
   fi
+  if [ "$DRY_RUN" -eq 1 ]; then
+    if [ -f "$dst" ]; then
+      echo "      上書き生成      : $(basename "$dst")"
+    else
+      echo "      生成            : $(basename "$dst")"
+    fi
+    return 0
+  fi
+  encode "$@"
 }
 
 # ── 変換ループ ───────────────────────────────────────────────────────
 total="${#files[@]}"
 i=0
 missing=0
-failed=0
+failed_inputs=0
 completed=()
 
 if [ "$MAKE_1080P" -eq 1 ] && [ "$MAKE_720P" -eq 1 ]; then
@@ -352,43 +360,27 @@ for f in "${files[@]}"; do
     continue
   fi
 
-  # ディレクトリと拡張子を除いたファイル名。
-  # 末尾に `(WIDTHxHEIGHT)` 形式の解像度サフィックスが付いている場合は取り除く
-  # （例: `YOUR-FILE-(1920x1080)` → `YOUR-FILE`）。直前の `-` / スペース / `_` も併せて除去する。
-  name="$(basename "${f%.*}" | sed -E 's/[-_ ]?\([0-9]+x[0-9]+\)//g')"
-  out1080="${OUTDIR}/${name}(1080p_H265).mp4"
-  out720="${OUTDIR}/${name}(720p_H265).mp4"
-
+  name="$(output_name "$f")"
   if [ "$DRY_RUN" -eq 1 ]; then
     echo "[$i/$total] $f"
-    [ "$MAKE_1080P" -eq 1 ] && plan_line "$out1080"
-    [ "$MAKE_720P" -eq 1 ] && plan_line "$out720"
-    continue
+  else
+    echo "===== [$(date '+%H:%M:%S')] ($i/$total) ${name} 開始 ====="
   fi
 
-  echo "===== [$(date '+%H:%M:%S')] ($i/$total) ${name} 開始 ====="
-
-  # ① 1080p / H265
+  ok=1
   if [ "$MAKE_1080P" -eq 1 ]; then
-    if [ -f "$out1080" ] && [ "$FORCE" -eq 0 ]; then
-      echo "  → 1080p は既に存在するためスキップ: $out1080"
-      completed+=("$out1080")
-    else
-      encode '1080p' "$f" "$out1080" 1080 "${ARGS_1080P[@]}" || failed=$((failed + 1))
-    fi
+    convert_target '1080p' "$f" "${OUTDIR}/${name}(1080p_H265).mp4" 1080 \
+      -vcodec libx265 -b:v "$BITRATE_1080P" || ok=0
   fi
-
-  # ② 720p / モバイル用
   if [ "$MAKE_720P" -eq 1 ]; then
-    if [ -f "$out720" ] && [ "$FORCE" -eq 0 ]; then
-      echo "  → 720p は既に存在するためスキップ: $out720"
-      completed+=("$out720")
-    else
-      encode '720p' "$f" "$out720" 720 "${ARGS_720P[@]}" || failed=$((failed + 1))
-    fi
+    convert_target '720p' "$f" "${OUTDIR}/${name}(720p_H265).mp4" 720 \
+      -vcodec libx265 -preset fast -b:v "$BITRATE_720P" || ok=0
   fi
+  [ "$ok" -eq 0 ] && failed_inputs=$((failed_inputs + 1))
 
-  echo "===== [$(date '+%H:%M:%S')] ($i/$total) ${name} 完了 ====="
+  if [ "$DRY_RUN" -eq 0 ]; then
+    echo "===== [$(date '+%H:%M:%S')] ($i/$total) ${name} 完了 ====="
+  fi
 done
 
 # ── 完了通知 ─────────────────────────────────────────────────────────
@@ -399,7 +391,7 @@ if [ "$DRY_RUN" -eq 1 ]; then
   exit 0
 fi
 
-msg="全 ${total} 件中 $((total - missing)) 件を処理しました（不在でスキップ: ${missing} 件 / 変換失敗: ${failed} 件）"
+msg="全 ${total} 件中 $((total - missing)) 件を処理しました（不在でスキップ: ${missing} 件 / 変換に失敗した入力: ${failed_inputs} 件）"
 echo ""
 echo "$msg"
 
@@ -412,7 +404,7 @@ fi
 
 osascript -e "display notification \"${msg}\" with title \"FFmpeg 変換完了\"" 2>/dev/null || true
 
-if [ "$failed" -gt 0 ] || [ "$missing" -gt 0 ]; then
+if [ "$failed_inputs" -gt 0 ] || [ "$missing" -gt 0 ]; then
   exit 1
 fi
 exit 0
