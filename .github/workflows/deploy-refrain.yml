@@ -6,6 +6,8 @@ on:
     paths:
       - 'apps/refrain/worker/**'
       - 'bun.lock'
+      - 'turbo.json'
+      - '.github/actions/setup/**'
       - '.github/workflows/deploy-refrain.yml'
   workflow_dispatch:
 
@@ -21,39 +23,34 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      # secrets を登録するまでは deploy を飛ばす（main が赤くならないようにする）。
-      # 登録後は、未登録をエラーにする形に戻す。
       - name: Check secrets
-        id: secrets
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$REFRAIN_ROUTE" ]; then
-            echo "::warning::Cloudflare の secrets が未登録のため deploy を飛ばした"
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          fi
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID REFRAIN_DOMAIN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::secret $name is not set"
+              exit 1
+            fi
+          done
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          REFRAIN_ROUTE: ${{ secrets.REFRAIN_ROUTE }}
+          REFRAIN_DOMAIN: ${{ secrets.REFRAIN_DOMAIN }}
 
       - name: Checkout
-        if: steps.secrets.outputs.ready == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup toolchain
-        if: steps.secrets.outputs.ready == 'true'
         uses: ./.github/actions/setup
 
-      # ルートパターンは独自ドメインを含むため、リポジトリではなく secret で渡す。
-      # vars ではなく secrets を使うこと（vars はワークフローログに平文で出力される）。
-      # wrangler.toml 側に [[routes]] は持たせていない。
-      - name: Deploy worker
-        if: steps.secrets.outputs.ready == 'true'
-        run: bun run --filter refrain-worker deploy -- --routes "$REFRAIN_ROUTE"
+      # turbo の deploy タスクは dependsOn: ["test"] なので、refrain-worker のテストが通ってからデプロイする。
+      # `--` 以降の引数は deploy にだけ渡る（test には渡らない）。
+      # Custom Domain のホスト名は、公開リポジトリに書かないため secret で渡す。
+      # vars ではなく secrets を使うこと（vars はワークフローのログに平文で出る）。
+      - name: Test and deploy worker
+        run: bunx turbo run deploy --filter=refrain-worker -- --domain "$REFRAIN_DOMAIN"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          REFRAIN_ROUTE: ${{ secrets.REFRAIN_ROUTE }}
+          REFRAIN_DOMAIN: ${{ secrets.REFRAIN_DOMAIN }}
