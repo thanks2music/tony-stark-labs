@@ -3,11 +3,11 @@ import { unlink } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import { captureInteractive, normalizeDpi } from './capture';
 import {
-  assertUsableEndpoint,
   type Config,
   DEFAULT_CONFIG_PATH,
   DEFAULT_TOKEN_PATH,
   ENDPOINT_ENV_VAR,
+  parseEndpoint,
   readConfig,
   readToken,
   resolveEndpoint,
@@ -71,10 +71,11 @@ async function loadConfigInteractively(): Promise<Config> {
 
   console.error(`No config found at ${DEFAULT_CONFIG_PATH}. Creating one interactively.`);
   console.error(`(set ${ENDPOINT_ENV_VAR} to skip this prompt)\n`);
-  const entered = assertUsableEndpoint((prompt('Worker upload endpoint:') ?? '').trim());
-  if (entered === '') {
+  const answer = (prompt('Worker upload endpoint:') ?? '').trim();
+  if (answer === '') {
     throw new Error(`no endpoint provided — set ${ENDPOINT_ENV_VAR} or answer the prompt`);
   }
+  const entered = parseEndpoint(answer);
   const tokenPath = (prompt('Token file path:', DEFAULT_TOKEN_PATH) ?? DEFAULT_TOKEN_PATH).trim();
   const config: Config = { endpoint: entered, tokenPath };
 
@@ -109,17 +110,14 @@ async function main(argv: string[]): Promise<number> {
   const config = await loadConfigInteractively();
   const token = await readToken(config.tokenPath);
 
-  let imagePath: string;
-  let captured = false;
-  if (parsed.file !== undefined) {
-    imagePath = parsed.file;
-  } else {
-    imagePath = await captureInteractive();
-    captured = true;
-    await normalizeDpi(imagePath);
-  }
+  const captured = parsed.file === undefined;
+  const imagePath = parsed.file ?? (await captureInteractive());
 
+  // Everything after the capture runs inside try, so the temporary screenshot is
+  // removed even when normalizeDpi fails.
   try {
+    if (captured) await normalizeDpi(imagePath);
+
     const url = await uploadImage({
       filePath: imagePath,
       endpoint: config.endpoint,
