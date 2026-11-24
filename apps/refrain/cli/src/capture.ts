@@ -54,20 +54,25 @@ function spawnChecked<S extends 'pipe' | 'ignore'>(cmd: string[], stdout: S) {
 
 export type CaptureOutcome = 'captured' | 'cancelled';
 
-/** Classifies a finished `screencapture -i`. Not implemented yet (TDD red). */
-export function interpretCapture(_exitCode: number, _fileExists: boolean): CaptureOutcome {
-  throw new Error('interpretCapture: not implemented');
+/**
+ * Classifies a finished `screencapture -i`.
+ *
+ * Pressing Esc (or clicking away) ends it with exit code 0 and no file, which is
+ * a normal cancel, not an error. Only a non-zero exit is a failure.
+ */
+export function interpretCapture(exitCode: number, fileExists: boolean): CaptureOutcome {
+  if (exitCode !== 0) {
+    throw new Error(`screencapture exited with code ${exitCode}`);
+  }
+  return fileExists ? 'captured' : 'cancelled';
 }
 
-export async function captureInteractive(): Promise<string> {
+/** Captures a region interactively. Returns `null` when the user cancels. */
+export async function captureInteractive(): Promise<string | null> {
   const tmpfile = join(tmpdir(), `refrain-${process.pid}-${Date.now()}.png`);
-  const proc = Bun.spawn(['screencapture', '-i', tmpfile]);
-  await proc.exited;
-  const file = Bun.file(tmpfile);
-  if (!(await file.exists())) {
-    throw new Error('screencapture cancelled or failed');
-  }
-  return tmpfile;
+  const exitCode = await Bun.spawn(['screencapture', '-i', tmpfile]).exited;
+  const outcome = interpretCapture(exitCode, await Bun.file(tmpfile).exists());
+  return outcome === 'captured' ? tmpfile : null;
 }
 
 export async function normalizeDpi(path: string): Promise<void> {

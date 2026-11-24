@@ -113,6 +113,9 @@ async function main(argv: string[]): Promise<number> {
 
   const captured = parsed.file === undefined;
   const imagePath = parsed.file ?? (await captureInteractive());
+  // Cancelling the selection (Esc) is not an error: exit quietly so that the
+  // Shortcuts app shows no failure notification.
+  if (imagePath === null) return 0;
 
   // Everything after the capture runs inside try, so the temporary screenshot is
   // removed even when normalizeDpi fails.

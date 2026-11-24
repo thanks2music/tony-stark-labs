@@ -133,7 +133,7 @@ refrain --no-copy          # pbcopy にコピーしない
 処理フロー:
 
 1. 上記の順序で `endpoint` を解決し、`tokenPath` を `~/.config/refrain/config.json` から読む。
-2. 引数にファイルパスがあればそれを、なければ `screencapture -i /tmp/refrain-<pid>.png` で矩形選択 UI を起動。
+2. 引数にファイルパスがあればそれを、なければ `screencapture -i /tmp/refrain-<pid>.png` で矩形選択 UI を起動。Esc などで選択を取り消した場合は、何も出力せずに exit 0 で終わる（ショートカット.app にエラーの通知を出さないため）。`screencapture -i` は取り消されると、終了コード 0 でファイルを作らずに終わるので、それを取り消しとみなす。0 以外の終了コードだけを失敗として扱う。
 3. `sips` で 72dpi 換算（Retina ディスプレイでの論理解像度保持。[Gyazo 公式 macOS クライアント](https://github.com/gyazo/Gyazo)の `Gyazo/script` から移植）。
 4. `fetch` で `imagedata` を multipart POST。`Authorization: Bearer <token>` を添える。
 5. 非 2xx は stderr にエラー出力して exit 1。
