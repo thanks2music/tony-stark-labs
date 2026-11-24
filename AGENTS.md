@@ -8,19 +8,13 @@
 
 **このリポジトリは GitHub で公開している。** 秘密値だけでなく、実在のドメインや個人の識別子も書かない（「公開リポジトリとしての注意」）。
 
-## 必須コマンド
+## コマンド
+
+コマンドの一覧は README の「開発コマンド」節にある。コミット前に、次を通す。
 
 ```bash
-bun install                            # 依存解決 + husky hook 初期化
-bun run lint                           # turbo run lint
-bun run typecheck                      # turbo run typecheck
-bun run test                           # turbo run test
-bun run format:check                   # Prettier チェック
-bun run --filter <name> <script>       # 特定 workspace のみ
-turbo run test --filter=...[HEAD^1]    # 変更 workspace のみ
+bun run lint && bun run format:check && bun run typecheck && bun run test
 ```
-
-コミット前に `bun run lint && bun run format:check && bun run typecheck && bun run test` を通す。
 
 ## Commit ルール
 
@@ -92,14 +86,7 @@ turbo run test --filter=...[HEAD^1]    # 変更 workspace のみ
 
 ## テストランナー
 
-| Workspace             | Runner                                     |
-| --------------------- | ------------------------------------------ |
-| `apps/refrain/worker` | Vitest + `@cloudflare/vitest-pool-workers` |
-| `apps/refrain/cli`    | `bun:test`                                 |
-| `apps/mail-to-gcal`   | Vitest                                     |
-| `packages/*`          | Vitest（既定）                             |
-
-使い分けの理由は README の「テストツール棲み分け」節を参照。
+workspace ごとに違う（Workers は Vitest、Bun の CLI は `bun:test`）。対応表と理由は README の「テストツール棲み分け」節を参照。
 
 ## Agent skills
 

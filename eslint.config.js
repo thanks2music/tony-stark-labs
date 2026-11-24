@@ -56,11 +56,4 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-return': 'warn',
     },
   },
-  {
-    // GCF は console.log を Cloud Logging に集約する運用のため no-console は不要
-    files: ['apps/mail-to-gcal/**/*.ts'],
-    rules: {
-      'no-console': 'off',
-    },
-  },
 );
