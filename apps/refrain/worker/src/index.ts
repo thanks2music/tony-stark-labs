@@ -49,7 +49,13 @@ async function handleUpload(
   if (lengthHeader === null) {
     return text(411, 'Content-Length is required');
   }
-  if (Number(lengthHeader) > MAX_UPLOAD_BYTES + MULTIPART_OVERHEAD_BYTES) {
+  // Number('abc') is NaN and NaN > limit is false, so reject anything that is not a
+  // non-negative integer instead of letting it skip the size check.
+  const declaredLength = Number(lengthHeader);
+  if (!Number.isInteger(declaredLength) || declaredLength < 0) {
+    return text(400, 'Invalid Content-Length');
+  }
+  if (declaredLength > MAX_UPLOAD_BYTES + MULTIPART_OVERHEAD_BYTES) {
     return text(413, TOO_LARGE);
   }
 

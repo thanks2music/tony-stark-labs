@@ -37,6 +37,11 @@ jobs:
               exit 1
             fi
           done
+          # --domain はホスト名だけを受け付ける。スキームやパスが混ざっていたら、deploy の前に止める
+          if ! printf '%s' "$REFRAIN_DOMAIN" | grep -Eq '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$'; then
+            echo "::error::secret REFRAIN_DOMAIN must be a bare host name (no scheme, path or uppercase)"
+            exit 1
+          fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
