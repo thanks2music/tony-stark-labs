@@ -25,6 +25,8 @@ Arguments:
   FILE            Optional path to an existing PNG image to upload.
                   The server accepts PNG only.
 
+Cancelling the selection (Esc) exits 0 with no output.
+
 Options:
   --open          Open the uploaded URL in the default browser.
   --no-copy       Do not copy the URL to the clipboard.
@@ -56,7 +58,8 @@ function parseCliArgs(argv: string[]): CliOptions | 'help' {
   return {
     open: values.open ?? false,
     noCopy: values['no-copy'] ?? false,
-    file: positionals[0],
+    // An empty argument (e.g. an unset "$FILE" in a wrapper) means "capture".
+    file: positionals[0] || undefined,
   };
 }
 

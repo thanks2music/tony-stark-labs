@@ -1,3 +1,4 @@
+import { unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -52,7 +53,7 @@ function spawnChecked<S extends 'pipe' | 'ignore'>(cmd: string[], stdout: S) {
   return Object.assign(proc, { checked });
 }
 
-export type CaptureOutcome = 'captured' | 'cancelled';
+type CaptureOutcome = 'captured' | 'cancelled';
 
 /**
  * Classifies a finished `screencapture -i`.
@@ -71,8 +72,14 @@ export function interpretCapture(exitCode: number, fileExists: boolean): Capture
 export async function captureInteractive(): Promise<string | null> {
   const tmpfile = join(tmpdir(), `refrain-${process.pid}-${Date.now()}.png`);
   const exitCode = await Bun.spawn(['screencapture', '-i', tmpfile]).exited;
-  const outcome = interpretCapture(exitCode, await Bun.file(tmpfile).exists());
-  return outcome === 'captured' ? tmpfile : null;
+  const fileExists = await Bun.file(tmpfile).exists();
+  try {
+    return interpretCapture(exitCode, fileExists) === 'captured' ? tmpfile : null;
+  } catch (err) {
+    // A failed run may still have written the screenshot; do not leave it behind.
+    if (fileExists) await unlink(tmpfile).catch(() => undefined);
+    throw err;
+  }
 }
 
 export async function normalizeDpi(path: string): Promise<void> {
