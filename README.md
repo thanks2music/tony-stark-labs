@@ -189,7 +189,7 @@ Vitest は、使う workspace（いまは `refrain-worker`）の devDependencies
 
 ### CI
 
-- `.github/workflows/ci.yml`: PR と main push で `lint`（ESLint）/ `check`（Biome）/ `typecheck` / `test` を実行
+- `.github/workflows/ci.yml`: PR と main push で `check`（Biome）を実行してから、`turbo run lint typecheck test` を実行
 - アプリごとの `deploy-*.yml` は各アプリ取り込み時に追加する
 
 ## アプリ一覧と状態

@@ -23,6 +23,7 @@
   },
   "linter": {
     "rules": {
+      "correctness": { "noUnusedImports": "error", "noUnusedVariables": "error" },
       "style": { "useImportType": "error" }
     }
   }
