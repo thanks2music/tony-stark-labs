@@ -52,6 +52,13 @@ function spawnChecked<S extends 'pipe' | 'ignore'>(cmd: string[], stdout: S) {
   return Object.assign(proc, { checked });
 }
 
+export type CaptureOutcome = 'captured' | 'cancelled';
+
+/** Classifies a finished `screencapture -i`. Not implemented yet (TDD red). */
+export function interpretCapture(_exitCode: number, _fileExists: boolean): CaptureOutcome {
+  throw new Error('interpretCapture: not implemented');
+}
+
 export async function captureInteractive(): Promise<string> {
   const tmpfile = join(tmpdir(), `refrain-${process.pid}-${Date.now()}.png`);
   const proc = Bun.spawn(['screencapture', '-i', tmpfile]);
