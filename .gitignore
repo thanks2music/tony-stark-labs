@@ -90,3 +90,6 @@ docs/draft/
 experiments/**
 !experiments/**/
 !experiments/**/README.md
+
+# Playwright MCP の画面の記録（スナップショット・スクリーンショット・コンソールのログ）
+.playwright-mcp/
