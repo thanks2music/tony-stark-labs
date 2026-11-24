@@ -47,14 +47,13 @@ bun run check && bun run lint && bun run typecheck && bun run test
 ### Turbo の実行単位
 
 - `bun run lint` などは、すべて turbo 経由で各 workspace に委譲される
-- root だけを lint するときは `bun run lint:root`
 
 ### ランタイムのバージョン
 
 - `.tool-versions`（mise / asdf 互換）を正とする。切り替えは `mise install` / `asdf install`
 - Node は LTS の最新に揃える。Cloudflare Workers の実行環境は Node ではない（workerd）ので、Node のバージョンが効くのは手元と CI の wrangler・tsc・ESLint だけ
-- `.node-version` は、`.tool-versions` を読まないツールのために、同じバージョンを書いて併置している。上げるときは `.tool-versions`・`.node-version`・`package.json` の `engines` を揃える
-- CI は `actions/setup-node` で `.tool-versions` の Node を入れる（ランナーに最初から入っている Node に頼らない）
+- Node を上げるときは、`.tool-versions` と `package.json` の `engines` を揃える
+- CI は `.github/actions/setup`（composite action）で、`.tool-versions` の Node と Bun を入れる（ランナーに最初から入っている Node に頼らない）
 
 ### 環境変数
 

@@ -6,30 +6,17 @@
   },
   "formatter": {
     "indentStyle": "space",
-    "indentWidth": 2,
-    "lineEnding": "lf",
     "lineWidth": 100
   },
   "javascript": {
-    "formatter": {
-      "quoteStyle": "single",
-      "trailingCommas": "all",
-      "semicolons": "always",
-      "arrowParentheses": "always"
-    }
+    "formatter": { "quoteStyle": "single" }
   },
   "yaml": {
     "formatter": { "quoteStyle": "single", "bracketSpacing": false }
   },
   "linter": {
     "rules": {
-      "preset": "recommended",
-      "style": {
-        "useImportType": "error"
-      }
+      "style": { "useImportType": "error" }
     }
-  },
-  "assist": {
-    "actions": { "source": { "organizeImports": "on" } }
   }
 }

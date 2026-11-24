@@ -1,7 +1,10 @@
 version: 2
 updates:
-  # SHA 固定した action (claude-code-review.yml) とタグ参照の action を更新する
+  # SHA 固定した action を更新する。`/` は .github/workflows だけを見るので、
+  # composite action（.github/actions/*/action.yml）も対象に足す
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - /
+      - /.github/actions/*
     schedule:
       interval: weekly

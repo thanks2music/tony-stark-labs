@@ -5,14 +5,8 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: [
-      '**/.wrangler/**',
-      '**/.turbo/**',
-      '**/dist/**',
-      '**/coverage/**',
-      '**/worker-configuration.d.ts',
-      'archive/**',
-    ],
+    // 各 workspace は `eslint src test` を実行する。生成物と、lint-staged に渡りうるアーカイブだけ除外する
+    ignores: ['**/worker-configuration.d.ts', 'archive/**'],
   },
   {
     files: ['**/*.ts'],

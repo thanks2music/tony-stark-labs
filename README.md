@@ -29,7 +29,7 @@
 | ------------------------ | ----------------------------------------------------------- |
 | Package Manager          | Bun (`packageManager: bun@1.3.2`)                           |
 | タスクランナー           | Turborepo 2.x                                               |
-| ランタイム               | Bun 1.3.2 / Node.js 26 LTS（`.tool-versions`）              |
+| ランタイム               | Bun / Node.js LTS（バージョンは `.tool-versions`）          |
 | 言語                     | TypeScript 6                                                |
 | Lint / Format            | Biome 2（format・lint）/ ESLint 9（型情報を使うルールだけ） |
 | Test                     | Vitest（Workers）・bun:test（Bun 専用）                     |
@@ -64,7 +64,7 @@ tony-stark-labs/
 | ツール       | バージョン                     | 備考                                  |
 | ------------ | ------------------------------ | ------------------------------------- |
 | Bun          | `>=1.3` (cf. `.tool-versions`) | Package manager / ランタイム          |
-| Node.js      | `>=26` (cf. `.tool-versions`)  | wrangler・tsc・ESLint などの実行用    |
+| Node.js      | cf. `.tool-versions`           | wrangler・tsc・ESLint などの実行用    |
 | mise or asdf | 最新                           | `.tool-versions` でバージョンを揃える |
 
 ```bash

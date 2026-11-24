@@ -23,19 +23,8 @@ jobs:
         with:
           persist-credentials: false
 
-      # wrangler・tsc・ESLint を .tool-versions の Node で動かす（ランナーに最初から入っている Node に頼らない）
-      - name: Setup Node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .tool-versions
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version-file: .tool-versions
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+      - name: Setup toolchain
+        uses: ./.github/actions/setup
 
       - name: Cache Turbo
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -46,14 +35,10 @@ jobs:
             turbo-${{ runner.os }}-${{ github.ref_name }}-
             turbo-${{ runner.os }}-
 
-      - name: Lint
-        run: bun run lint
-
+      # Biome が最も速く落ちるので先に実行する
       - name: Biome (format and lint)
         run: bun run check
 
-      - name: Typecheck
-        run: bun run typecheck
-
-      - name: Test
-        run: bun run test
+      # 1 回の turbo 実行にまとめ、workspace をまたいでタスクを並列に動かす
+      - name: Lint, typecheck and test
+        run: bunx turbo run lint typecheck test
