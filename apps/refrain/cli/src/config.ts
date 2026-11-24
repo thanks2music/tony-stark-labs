@@ -20,6 +20,11 @@ export const DEFAULT_TOKEN_PATH = join(DEFAULT_CONFIG_DIR, 'token');
  */
 export const ENDPOINT_ENV_VAR = 'REFRAIN_ENDPOINT';
 
+/** Validates the upload endpoint. Not implemented yet (TDD red). */
+export function parseEndpoint(_raw: string): string {
+  throw new Error('parseEndpoint: not implemented');
+}
+
 /** Rejects an endpoint that still carries the `{DOMAIN}` placeholder. */
 export function assertUsableEndpoint(endpoint: string): string {
   if (endpoint.includes('{DOMAIN}')) {

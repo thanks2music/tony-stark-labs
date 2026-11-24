@@ -73,6 +73,17 @@ describe('computeNormalizedSize', () => {
     expect(result).toEqual({ width: 1080, height: 720 });
   });
 
+  it('rounds fractional sizes to whole pixels for sips -z', () => {
+    expect(
+      computeNormalizedSize({
+        pixelWidth: 1235,
+        pixelHeight: 801,
+        dpiWidth: 144,
+        dpiHeight: 144,
+      }),
+    ).toEqual({ width: 618, height: 401 });
+  });
+
   it('handles asymmetric DPI on each axis', () => {
     expect(
       computeNormalizedSize({
