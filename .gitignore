@@ -1,3 +1,7 @@
+# AI エージェント向けの規約は公開する（グローバルの ~/.gitignore が AGENTS.md と CLAUDE.md を除外しているため例外にする）。
+# CLAUDE.md は個人の運用なので除外のまま
+!/AGENTS.md
+
 # Dependencies
 node_modules/
 .pnpm-store/
@@ -76,4 +80,13 @@ Thumbs.db
 
 # SDD
 docs/plan
-docs/report
+# セッション作業報告書はどの階層でもコミットしない（正本は Obsidian の vault）
+**/docs/report/
+
+# 一時的な下書き（コミットしない）
+docs/draft/
+
+# experiments/: 素材と成果物はコミットせず、各ディレクトリの README.md だけを追跡する
+experiments/**
+!experiments/**/
+!experiments/**/README.md
