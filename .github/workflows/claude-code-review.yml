@@ -77,21 +77,21 @@ jobs:
             - コード品質・ベストプラクティス
             - パフォーマンス
             - ドキュメント / 設定の場合は正確性・公式仕様や一次情報との整合
-            - 下記「リポジトリの規約」と README.md との整合
+            - 下記「リポジトリの規約」との整合
 
-            ## リポジトリの規約 (CLAUDE.md は追跡していないため、ここに要点を書く)
-            - Bun workspaces + Turborepo の monorepo。アプリは `apps/` 配下の独立 workspace
-            - このリポジトリは public。refrain の独自ドメインをソース・設定・ドキュメントのどこにも書かない
-              (ドキュメントでは `{DOMAIN}` プレースホルダ)。`apps/refrain/worker/wrangler.toml` に `[[routes]]` を書かず、
-              ルートは deploy 時に `secrets.REFRAIN_ROUTE` から渡す (`vars` はログに平文で出るので使わない)
-            - `.env` や機密値をコミットしない
-            - Vitest は root の devDependencies に v4 で一本化する。workspace 側で宣言しない・v3 に戻さない
-              (`@cloudflare/vitest-pool-workers` が `vitest: ^4.1.0` を要求する)
-            - `bunfig.toml` の `linker = "isolated"` と互換性がないため、git hook は husky + lint-staged + commitlint。
-              simple-git-hooks に戻さない
-            - `apps/refrain/worker/worker-configuration.d.ts` は生成物だが typecheck に必要なため意図的に追跡している
-            - `refrain-cli` の build は macOS 専用バイナリ。CI で `turbo run build` を足すなら `--filter=!refrain-cli` を付ける
-            - コミットは Conventional Commits で、subject は lowercase で始める
+            ## リポジトリの規約
+            規約はリポジトリのファイルに書いてある。作業ディレクトリには、この PR を base ブランチにマージした結果が
+            チェックアウトされている。レビューの前に次のファイルを読み、それを規約として扱う。
+            規約をこの prompt に書き写さないのは、PR で規約が変わったときに食い違わないようにするため。
+            - `AGENTS.md` (必ず読む): 規約の本体 (コマンド・Commit ルール・非自明な設定と制約・公開リポジトリとしての注意)
+            - `README.md`: 構成と開発フロー
+            - ADR: `docs/adr/*.md` と `apps/*/docs/adr/*.md` を Glob で一覧し、PR が変更したパスに関係するものだけ Read する。
+              変更が ADR と矛盾するなら指摘する
+            - 用語: `GLOSSARY-MAP.md` を読み、PR が変更したパスの context の `GLOSSARY.md` だけ Read する。
+              `_Avoid_` に挙がった言い換えを使っていれば指摘する
+            存在しないファイルは読まずに進める。
+            PR が規約のファイル (上記) 自体を変えている場合は、`gh pr diff` で削除・変更された行も確かめ、
+            規約を緩めていないか、ほかの記述と矛盾しないかもレビューする。緩める変更には理由が書かれているかを見る。
 
             ## 進め方
             - `gh pr view` と `gh pr diff` で変更を確認する。PR ブランチは作業ディレクトリにチェックアウト済みなので、
