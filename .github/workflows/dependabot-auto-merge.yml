@@ -1,0 +1,40 @@
+name: Dependabot auto-merge
+
+# Dependabot の PR のうち、patch / minor の更新に auto-merge を有効にする。major は人が確認してマージする。
+# anthropics/claude-code-action は Claude の認証トークンを扱うため、patch / minor でも人が確認してマージする。
+# 公式: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/automating-dependabot-with-github-actions#enabling-auto-merge-on-a-pull-request
+#
+# auto-merge が CI を待つには、リポジトリ側に次の 2 つが要る:
+#   - Settings > General の "Allow auto-merge"
+#   - main のルールセットで CI (job 名 `ci`) を必須チェックにする
+# 必須チェックが無いと、CI の結果を待たずにマージされる。
+
+on: pull_request
+
+permissions: {}
+
+jobs:
+  dependabot:
+    name: Enable auto-merge
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'thanks2music/tony-stark-labs'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # PR のマージ
+      pull-requests: write # auto-merge の有効化
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge for patch / minor updates
+        if: |
+          (steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+           steps.metadata.outputs.update-type == 'version-update:semver-minor') &&
+          !contains(steps.metadata.outputs.dependency-names, 'anthropics/claude-code-action')
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,107 @@
+name: Claude Code Review
+
+# 自由文プロンプト方式 (本スキルの正本)。日本語で、push のたびにレビューする。
+# 公式 plugin 方式 (英語・高確度の指摘のみ・PR ごとに 1 回) は claude-code-review-plugin.yml を参照。
+#
+# action は commit SHA で固定している (GitHub の Secure use reference の推奨)。
+# 更新は Dependabot (package-ecosystem: github-actions) に任せる。手で上げる場合は SKILL.md の「SHA 固定と更新」を参照。
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# job 側で必要な分だけ付ける
+permissions: {}
+
+# 同じ PR に続けて push したら、古いレビューを止める (重複コメントと利用量を抑える)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Claude review
+    # - draft の PR はレビューしない (ready_for_review で走る)
+    # - fork からの PR は secret が渡らないので飛ばす
+    # - bot (dependabot / renovate / Copilot 等) が起動した run は action が既定で拒否し失敗するので飛ばす
+    #   (Copilot は actor 名に [bot] が付かないため個別に除外)
+    #   (bot にもレビューさせたい場合は、この条件を外して with: に allowed_bots を具体名で指定する)
+    if: |
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      !endsWith(github.actor, '[bot]') &&
+      github.actor != 'Copilot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # この permissions が絞るのは GITHUB_TOKEN だけ。コメント投稿は Claude GitHub App のトークン
+    # (権限は App 側で決まる) で行うため、read で足りる
+    permissions:
+      contents: read # チェックアウト
+      pull-requests: read # PR の情報と差分を読む
+      issues: read # PR の会話のコメントを読む (Issues API)
+      id-token: write # Claude GitHub App のトークンを OIDC で受け取るのに必要
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          # レビューは push しない。GITHUB_TOKEN を .git/config に残さない
+          persist-credentials: false
+
+      - name: Claude Code Review
+        uses: anthropics/claude-code-action@eb56b6666facdbd501035f4a0269d8caee2e7a8b # v1.0.289
+        with:
+          # Claude サブスクリプション (Pro / Max / Team / Enterprise) の `claude setup-token` で発行したトークン。
+          # Claude Console の API キーを使う場合は `anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}` に置き換える
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # --permission-mode default: 下の --allowedTools に無い操作をすべて拒否する。
+          #   v1.0.273 (2026-11-12) から既定は auto mode で、許可していない操作も安全審査を通れば動く。
+          #   レビューは読むことと投稿することしかしないので、許可リストを厳密にする
+          # --max-turns: 暴走時の上限 (公式 docs「Manage costs」)
+          # --allowedTools: inline コメント用の MCP サーバーは、ここに名前があるときだけ起動する。
+          #   投稿ツールが無いと、run は SUCCESS のままコメントが一切付かない
+          claude_args: |
+            --permission-mode default
+            --max-turns 50
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read,Grep,Glob"
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            この Pull Request を日本語でレビューしてください。
+
+            ## 観点
+            - 潜在的なバグ・問題
+            - セキュリティ上の懸念 (秘密情報の混入、権限の広さ、入力の検証)
+            - コード品質・ベストプラクティス
+            - パフォーマンス
+            - ドキュメント / 設定の場合は正確性・公式仕様や一次情報との整合
+            - 下記「リポジトリの規約」と README.md との整合
+
+            ## リポジトリの規約 (CLAUDE.md は追跡していないため、ここに要点を書く)
+            - Bun workspaces + Turborepo の monorepo。アプリは `apps/` 配下の独立 workspace
+            - このリポジトリは public。refrain の独自ドメインをソース・設定・ドキュメントのどこにも書かない
+              (ドキュメントでは `{DOMAIN}` プレースホルダ)。`apps/refrain/worker/wrangler.toml` に `[[routes]]` を書かず、
+              ルートは deploy 時に `secrets.REFRAIN_ROUTE` から渡す (`vars` はログに平文で出るので使わない)
+            - `.env` や機密値をコミットしない
+            - Vitest は root の devDependencies に v4 で一本化する。workspace 側で宣言しない・v3 に戻さない
+              (`@cloudflare/vitest-pool-workers` が `vitest: ^4.1.0` を要求する)
+            - `bunfig.toml` の `linker = "isolated"` と互換性がないため、git hook は husky + lint-staged + commitlint。
+              simple-git-hooks に戻さない
+            - `apps/refrain/worker/worker-configuration.d.ts` は生成物だが typecheck に必要なため意図的に追跡している
+            - `refrain-cli` の build は macOS 専用バイナリ。CI で `turbo run build` を足すなら `--filter=!refrain-cli` を付ける
+            - コミットは Conventional Commits で、subject は lowercase で始める
+
+            ## 進め方
+            - `gh pr view` と `gh pr diff` で変更を確認する。PR ブランチは作業ディレクトリにチェックアウト済みなので、
+              差分が大きいときや周辺のコードが要るときは Read / Grep / Glob でファイルを直接読む
+            - コードで確かめられない推測や、書式・好みの問題は書かない。指摘は確度の高いものに絞る
+            - 指摘には重大度を付ける: 🔴 必須 (マージ前に直すべき) / 🟡 推奨 / 🔵 参考
+            - 根拠に公式ドキュメントがあれば URL を添える
+
+            ## 投稿
+            - 特定の行への指摘は `mcp__github_inline_comment__create_inline_comment` (confirmed: true) で投稿する
+            - 全体の所感と指摘の一覧は `gh pr comment` で 1 件にまとめて投稿する
+            - 問題が無ければ、その旨を `gh pr comment` で明記する
+            - レビューは GitHub 上にだけ投稿する
