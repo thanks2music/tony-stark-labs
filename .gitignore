@@ -1,36 +1,92 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# AI エージェント向けの規約は公開する（グローバルの ~/.gitignore が AGENTS.md と CLAUDE.md を除外しているため例外にする）。
+# CLAUDE.md は個人の運用なので除外のまま
+!/AGENTS.md
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+# Dependencies
+node_modules/
+.pnpm-store/
 
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
-.env*.local
-.env
-
-# vercel
-.vercel
-
-# typescript
+# Build artifacts
+dist/
+build/
+.next/
+out/
+.turbo/
 *.tsbuildinfo
 next-env.d.ts
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+bun-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.staging
+!.env.example
+!.env.*.example
+
+# Cloudflare Workers (wrangler)
+.wrangler/
+.dev.vars
+worker-configuration.d.ts
+# refrain worker のみ typecheck に必須のため意図的に追跡する。
+# 再生成: bun run --filter refrain-worker cf-typegen
+!apps/refrain/worker/worker-configuration.d.ts
+.mf/
+
+# Google Cloud
+.gcp/
+gcp-credentials.json
+*-service-account.json
+
+# Vercel
+.vercel
+
+# Python (future use)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.python-version
+
+# Editor / IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+*.pem
+
+# misc
+.eslintcache
+
+# SDD
+docs/plan
+# セッション作業報告書はどの階層でもコミットしない（正本は Obsidian の vault）
+**/docs/report/
+
+# 一時的な下書き（コミットしない）
+docs/draft/
+
+# experiments/: 素材と成果物はコミットせず、各ディレクトリの README.md だけを追跡する
+experiments/**
+!experiments/**/
+!experiments/**/README.md
