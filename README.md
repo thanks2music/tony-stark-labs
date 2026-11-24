@@ -25,16 +25,16 @@
 
 ## 技術スタック
 
-| 層                       | 採用                                           |
-| ------------------------ | ---------------------------------------------- |
-| Package Manager          | Bun (`packageManager: bun@1.3.2`)              |
-| タスクランナー           | Turborepo 2.x                                  |
-| ランタイム               | Bun 1.3.2 / Node.js 24.14.0                    |
-| 言語                     | TypeScript 6                                   |
-| Lint / Format            | ESLint 9 (flat config) / Prettier 3            |
-| Test                     | Vitest（Workers / Node）・bun:test（Bun 専用） |
-| Git Hook                 | husky + lint-staged + commitlint               |
-| ランタイムバージョン管理 | `.tool-versions` (mise / asdf)                 |
+| 層                       | 採用                                    |
+| ------------------------ | --------------------------------------- |
+| Package Manager          | Bun (`packageManager: bun@1.3.2`)       |
+| タスクランナー           | Turborepo 2.x                           |
+| ランタイム               | Bun 1.3.2 / Node.js 24.14.0             |
+| 言語                     | TypeScript 6                            |
+| Lint / Format            | ESLint 9 (flat config) / Prettier 3     |
+| Test                     | Vitest（Workers）・bun:test（Bun 専用） |
+| Git Hook                 | husky + lint-staged + commitlint        |
+| ランタイムバージョン管理 | `.tool-versions` (mise / asdf)          |
 
 ## ディレクトリ構造
 
@@ -64,7 +64,7 @@ tony-stark-labs/
 | ツール       | バージョン                     | 備考                                  |
 | ------------ | ------------------------------ | ------------------------------------- |
 | Bun          | `>=1.3` (cf. `.tool-versions`) | Package manager / ランタイム          |
-| Node.js      | `>=22` (cf. `.tool-versions`)  | GCF 互換のため 22 以上                |
+| Node.js      | `>=22` (cf. `.tool-versions`)  | wrangler・tsc・ESLint などの実行用    |
 | mise or asdf | 最新                           | `.tool-versions` でバージョンを揃える |
 
 ```bash
@@ -194,15 +194,13 @@ Vitest は root の devDependencies に **v4** で一本化している。`@clou
 
 ## アプリ一覧と状態
 
-| アプリ           | 状態                | 技術                                      | ホスティング            |
-| ---------------- | ------------------- | ----------------------------------------- | ----------------------- |
-| `refrain`        | 取り込み済み        | Bun + CF Workers + R2 + macOS CLI         | Cloudflare Workers + R2 |
-| `mail-to-gcal`   | アーカイブ          | Node.js 22 + functions-framework + Vitest | （運用停止）            |
-| `internal-tools` | Phase 3（汎用化後） | 未定                                      | 未定                    |
+| アプリ           | 状態                     | 技術                                      | ホスティング            |
+| ---------------- | ------------------------ | ----------------------------------------- | ----------------------- |
+| `refrain`        | 取り込み済み             | Bun + CF Workers + R2 + macOS CLI         | Cloudflare Workers + R2 |
+| `mail-to-gcal`   | アーカイブ（`archive/`） | Node.js 22 + functions-framework + Vitest | （運用停止）            |
+| `internal-tools` | Phase 3（汎用化後）      | 未定                                      | 未定                    |
 
 `refrain` は `refrain-worker` / `refrain-cli` の 2 workspace に分かれる。詳細は [apps/refrain/README.md](./apps/refrain/README.md)。
-
-`mail-to-gcal` は運用を止め、`archive/mail-to-gcal/` に当時のまま残している（workspace・CI・lint の対象外）。
 
 ## 新しいアプリを追加する手順
 

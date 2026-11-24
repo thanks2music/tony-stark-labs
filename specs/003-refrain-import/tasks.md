@@ -1,5 +1,8 @@
 # Tasks 003: `apps/refrain` 取り込み作業手順
 
+> [!NOTE]
+> この取り込みのあと、`mail-to-gcal` は運用を止めて `archive/` へ移した。文中で mail-to-gcal を現役の workspace として扱っている箇所は、当時の状態の記録。
+
 Related: [spec.md](./spec.md), [plan.md](./plan.md)
 
 以下のステップを順次実施する。各ステップは原則 1 commit に対応させる。

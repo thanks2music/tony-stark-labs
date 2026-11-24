@@ -1,5 +1,8 @@
 # Spec 003: `apps/refrain` monorepo 取り込み (Phase 2)
 
+> [!NOTE]
+> この取り込みのあと、`mail-to-gcal` は運用を止めて `archive/` へ移した。文中で mail-to-gcal を現役の workspace として扱っている箇所は、当時の状態の記録。
+
 Related: [specs/001-mail-to-gcal-import/spec.md](../001-mail-to-gcal-import/spec.md), [plan.md](./plan.md), [tasks.md](./tasks.md)
 
 ## 目的

@@ -1,7 +1,7 @@
 # Spec 001: `apps/mail-to-gcal` monorepo 取り込み (Phase 1a)
 
 > [!WARNING]
-> **アーカイブ済み。** `mail-to-gcal` は運用を止め、コードを `archive/mail-to-gcal/` へ移した。この文書は当時の記録として残している。AI エージェントは、ここに書かれた手順や未完了のタスクを実行しないこと。パスの `apps/mail-to-gcal` は、いまは `archive/mail-to-gcal` にある。
+> **アーカイブ済みの当時の記録。** コードは `archive/mail-to-gcal/` へ移した（文中の `apps/mail-to-gcal` も同じ）。扱いは AGENTS.md の「アーカイブ」節に従い、ここに書かれた手順やタスクは実行しない。
 
 Next phase: [specs/002-mail-to-gcal-gcp-migration/spec.md](../002-mail-to-gcal-gcp-migration/spec.md)
 
