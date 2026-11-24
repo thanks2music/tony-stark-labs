@@ -1,6 +1,9 @@
 # Plan 003: `apps/refrain` 取り込み実装方針
 
 > [!NOTE]
+> この spec のあと、Workers のテストは `@cloudflare/vitest-plugin`（旧 `@cloudflare/vitest-pool-workers`）に移り、Vitest は `refrain-worker` に宣言するようになった。今の構成は AGENTS.md を参照。
+
+> [!NOTE]
 > この取り込みのあと、`mail-to-gcal` は運用を止めて `archive/` へ移した。文中で mail-to-gcal を現役の workspace として扱っている箇所は、当時の状態の記録。
 
 Related: [spec.md](./spec.md), [tasks.md](./tasks.md)

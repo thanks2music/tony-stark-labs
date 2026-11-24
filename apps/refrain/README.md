@@ -82,7 +82,7 @@ monorepo 取り込み時に決めた、壊しやすい取り決め。
 
 | 制約                                                              | 理由                                                                                                                                                                        |
 | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Vitest のメジャー版は `@cloudflare/vitest-plugin` に合わせる**  | `@cloudflare/vitest-plugin` の peerDependencies（いまは `vitest: ^4.1.0 \|\| ^5.0.0`）の外に出ると、`refrain-worker` のテストが起動しない                                   |
+| **Vitest は 4 系に留める**                                        | `@cloudflare/vitest-plugin` の公式の例が `vitest@^4.1.0`。Vitest 5 は `nodejs_compat` の無いこの Worker で `node:inspector` のエラーを出す（AGENTS.md）                     |
 | **`wrangler.toml` を gitignore に戻さない**                       | `worker/vitest.config.ts` が `configPath: './wrangler.toml'` を参照する。無いと CI の `bun run test` が起動時に落ちる                                                       |
 | **`wrangler.toml` に Custom Domain（`[[routes]]`）を書かない**    | 本リポジトリは Public。ホスト名は deploy 時に `--domain` で渡す（[ADR](./docs/adr/0001-keep-the-domain-out-of-the-repository.md)）                                          |
 | **`worker-configuration.d.ts` を消さない**                        | `wrangler types` の生成物だが typecheck に必須。root `.gitignore` は同名を無視するので `!apps/refrain/worker/worker-configuration.d.ts` で例外化済み。再生成は `cf-typegen` |

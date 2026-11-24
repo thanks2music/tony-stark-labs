@@ -146,7 +146,7 @@ turbo run build --filter=...[HEAD^1]   # 変更 workspace とその依存のみ
 | `apps/refrain/cli`    | **bun:test**                             | `Bun.spawn` / `bun build --compile` とランタイム一致 |
 | `packages/*`          | **Vitest** 既定                          | 両ランタイムから import されうる標準寄り             |
 
-Vitest は、使う workspace（いまは `refrain-worker`）の devDependencies に宣言している。Workers のテストに使う `@cloudflare/vitest-plugin` が対応する Vitest のメジャー版だけを使う（いまは v5）。
+Vitest は、使う workspace（いまは `refrain-worker`）の devDependencies に **v4** で宣言している。Workers のテストに使う `@cloudflare/vitest-plugin` の公式の例が `vitest@^4.1.0` で、Vitest 5 は `nodejs_compat` の無い Worker ではテストのたびに `node:inspector` のエラーを出すため（理由の詳細は AGENTS.md）。
 
 ## Commit Convention
 
