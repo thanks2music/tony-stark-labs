@@ -1,5 +1,8 @@
 # Plan 001: `apps/mail-to-gcal` 取り込み実装方針
 
+> [!WARNING]
+> **アーカイブ済み。** `mail-to-gcal` は運用を止め、コードを `archive/mail-to-gcal/` へ移した。この文書は当時の記録として残している。AI エージェントは、ここに書かれた手順や未完了のタスクを実行しないこと。パスの `apps/mail-to-gcal` は、いまは `archive/mail-to-gcal` にある。
+
 ## アーキテクチャ変更点
 
 ### 環境変数アクセスの一元化
