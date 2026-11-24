@@ -69,7 +69,7 @@ bun run check && bun run lint && bun run typecheck && bun run test
 
 ### refrain のその他の制約
 
-- `apps/refrain/worker/worker-configuration.d.ts` は `wrangler types` の生成物だが、typecheck に必要なので**意図して追跡している**。root の `.gitignore` は同名のファイルを無視するので、否定パターンで例外にしてある。再生成は `bun run --filter refrain-worker cf-typegen`
+- `apps/refrain/worker/worker-configuration.d.ts` は `wrangler types` の生成物だが、typecheck に必要なので**意図して追跡している**。root の `.gitignore` は同名のファイルを無視するので、否定パターンで例外にしてある。再生成は `bun run --filter refrain-worker cf-typegen`。secret の型は `wrangler.toml` の `[secrets] required` から作られるので、secret を増やしたらそこにも足す（`.dev.vars` は要らない）
 - `refrain-cli` の `build` は macOS 専用のバイナリ（約 60 MB）を作る。CI に `turbo run build` を足すときは `--filter=!refrain-cli` を付ける（今の CI は build を実行しない）
 - `worker/vitest.config.ts` が `wrangler.toml` を参照するので、`wrangler.toml` を gitignore に戻すと CI の `bun run test` が起動時に落ちる
 

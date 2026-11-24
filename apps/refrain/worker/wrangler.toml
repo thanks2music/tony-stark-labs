@@ -11,6 +11,11 @@ preview_urls = false
 # デプロイ時に CLI フラグで渡す（CI では .github/workflows/deploy-refrain.yml が secrets.REFRAIN_DOMAIN から渡す）:
 #   wrangler deploy --domain "$REFRAIN_DOMAIN"
 
+# Worker に必要な secret の名前（値は `wrangler secret put` で登録する）。
+# `wrangler types` はここから Env の型を作り、`wrangler deploy` は登録漏れがあれば失敗する。
+[secrets]
+required = ["UPLOAD_TOKEN"]
+
 [[r2_buckets]]
 binding = "BUCKET"
 bucket_name = "refrain"
