@@ -4,7 +4,7 @@
 
 ## リポジトリ概要
 
-[@thanks2music](https://github.com/thanks2music) の個人用 polyglot monorepo。アプリは `apps/` 配下に独立した workspace として置き、ツールチェーン（Bun / Turborepo / ESLint / Prettier / CI）を共有する。ホスティングはアプリごとに選ぶ。
+[@thanks2music](https://github.com/thanks2music) の個人用 polyglot monorepo。アプリは `apps/` 配下に独立した workspace として置き、ツールチェーン（Bun / Turborepo / Biome / ESLint / CI）を共有する。ホスティングはアプリごとに選ぶ。
 
 **このリポジトリは GitHub で公開している。** 秘密値だけでなく、実在のドメインや個人の識別子も書かない（「公開リポジトリとしての注意」）。
 
@@ -13,7 +13,7 @@
 コマンドの一覧は README の「開発コマンド」節にある。コミット前に、次を通す。
 
 ```bash
-bun run lint && bun run format:check && bun run typecheck && bun run test
+bun run check && bun run lint && bun run typecheck && bun run test
 ```
 
 ## Commit ルール
@@ -37,31 +37,35 @@ bun run lint && bun run format:check && bun run typecheck && bun run test
 - この linker は `simple-git-hooks` の postinstall script と互換性がない（パス解決に失敗する）
 - そのため git hook は **husky v9 + lint-staged + commitlint**。simple-git-hooks に戻さない
 
-### ESLint flat config と型情報を使うルール
+### Lint と format は Biome + 型情報だけの ESLint
 
-- `eslint.config.js` は `projectService: true` で、各 workspace の `tsconfig.json` を自動で解決する
-- JS ファイル（`eslint.config.js`・`commitlint.config.js` など）には `tseslint.configs.disableTypeChecked` を適用済み
+- format と一般的な lint は Biome（`biome.json`、`bun run check`）。ESLint は typescript-eslint の `recommendedTypeCheckedOnly`（型情報を使うルールだけ）を TypeScript のファイル（`.ts`・`.tsx`・`.mts`・`.cts`）に適用する（`bun run lint`）。理由は [ADR 0001](./docs/adr/0001-biome-with-type-aware-eslint.md)
+- **型情報を使わないルールを ESLint に足さない。** Biome とルールが重なる。足したいルールは `biome.json` で有効にする
+- `eslint.config.js` は `projectService: true` で、各 workspace の `tsconfig.json` を自動で解決する。lint する `.ts` は、どれかの `tsconfig.json` の `include` に入っている必要がある
+- Biome は `.gitignore` を読むが、グローバルの `~/.gitignore` は読まない。グローバルだけで除外している個人のファイル（`CLAUDE.md`・`.claude/`）は、`biome.json` の `files.includes` で除外している
+- ルールを止める前に、コード側で直せないかを考える。今ある例外は、bun:test の型の都合で `await-thenable` を CLI のテストだけで止めているもの 1 つ。テストのコードにも本体と同じルールを当てる（`no-unsafe-*` などを緩めない）
 
 ### Turbo の実行単位
 
 - `bun run lint` などは、すべて turbo 経由で各 workspace に委譲される
-- root だけを lint するときは `bun run lint:root`
 
 ### ランタイムのバージョン
 
 - `.tool-versions`（mise / asdf 互換）を正とする。切り替えは `mise install` / `asdf install`
-- `.node-version` は、`.tool-versions` を読まないホスティング側の CI のために併置している
+- Node は LTS の最新に揃える。Cloudflare Workers の実行環境は Node ではない（workerd）ので、Node のバージョンが効くのは手元と CI の wrangler・tsc・ESLint だけ
+- Node を上げるときは、`.tool-versions` と `package.json` の `engines` を揃える
+- CI は `.github/actions/setup`（composite action）で、`.tool-versions` の Node と Bun を入れる（ランナーに最初から入っている Node に頼らない）
 
 ### 環境変数
 
 - `.env` はローカル専用（gitignore 済み）。`.env.example` を雛形にする
 - 機密値は GitHub Actions の secrets に置き、CI が deploy 時に注入する
 
-### Vitest は v4 で root に一本化している
+### 依存は使う workspace に宣言する
 
-- root の devDependencies にだけ `vitest` を置き、workspace 側では宣言しない
-- **v3 に戻さない**。`@cloudflare/vitest-pool-workers` の peerDependencies が `vitest: ^4.1.0` を要求するため、`refrain-worker` のテストが起動しなくなる
-- `@cloudflare/vitest-pool-workers` と `wrangler` は refrain 固有なので、`apps/refrain/worker` に置く（root に上げない）
+- Turborepo の方針どおり、依存はそれを使う workspace の `package.json` に宣言する。root に置くのは、リポジトリを管理するツール（turbo・husky・lint-staged・commitlint・Biome・ESLint と typescript-eslint）だけ（[Managing dependencies](https://turborepo.com/docs/crafting-your-repository/managing-dependencies)）
+- `tsc` を呼ぶ workspace は、それぞれ `typescript` を宣言する。root の `typescript` は typescript-eslint の peer dependency のために置いている
+- `vitest` は `refrain-worker` に宣言している。**v3 に戻さない**。`@cloudflare/vitest-pool-workers` の peerDependencies が `vitest: ^4.1.0` を要求するため、テストが起動しなくなる
 
 ### refrain のその他の制約
 

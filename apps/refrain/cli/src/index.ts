@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util';
 import { captureInteractive, normalizeDpi } from './capture';
 import {
   assertUsableEndpoint,
+  type Config,
   DEFAULT_CONFIG_PATH,
   DEFAULT_TOKEN_PATH,
   ENDPOINT_ENV_VAR,
@@ -11,7 +12,6 @@ import {
   readToken,
   resolveEndpoint,
   writeConfig,
-  type Config,
 } from './config';
 import { uploadImage } from './upload';
 

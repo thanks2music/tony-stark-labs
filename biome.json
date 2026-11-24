@@ -1,0 +1,30 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "includes": [
+      "**",
+      "!!**/archive",
+      "!!.husky/_",
+      "!!**/.claude",
+      "!!**/CLAUDE.md",
+      "!**/worker-configuration.d.ts"
+    ]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": { "quoteStyle": "single" }
+  },
+  "yaml": {
+    "formatter": { "quoteStyle": "single", "bracketSpacing": false }
+  },
+  "linter": {
+    "rules": {
+      "correctness": { "noUnusedImports": "error", "noUnusedVariables": "error" },
+      "style": { "useImportType": "error" }
+    }
+  }
+}

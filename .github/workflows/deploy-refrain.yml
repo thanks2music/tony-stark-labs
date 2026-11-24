@@ -43,15 +43,9 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Bun
+      - name: Setup toolchain
         if: steps.secrets.outputs.ready == 'true'
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version-file: .tool-versions
-
-      - name: Install dependencies
-        if: steps.secrets.outputs.ready == 'true'
-        run: bun install --frozen-lockfile
+        uses: ./.github/actions/setup
 
       # ルートパターンは独自ドメインを含むため、リポジトリではなく secret で渡す。
       # vars ではなく secrets を使うこと（vars はワークフローログに平文で出力される）。

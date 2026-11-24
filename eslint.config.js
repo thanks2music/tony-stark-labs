@@ -1,59 +1,28 @@
-// @ts-check
-import js from '@eslint/js';
+// ESLint は型情報を使うルールだけを担当する。それ以外の lint と format は Biome（biome.json）。
+// 分担の理由は docs/adr/0001-biome-with-type-aware-eslint.md。
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: [
-      '**/node_modules/**',
-      '**/.wrangler/**',
-      '**/.turbo/**',
-      '**/dist/**',
-      '**/build/**',
-      '**/.next/**',
-      '**/coverage/**',
-      '**/worker-configuration.d.ts',
-      '**/vitest.config.*',
-      '**/vite.config.*',
-      'archive/**',
-    ],
+    // 各 workspace は `eslint src test` を実行する。生成物と、lint-staged に渡りうるアーカイブだけ除外する
+    ignores: ['**/worker-configuration.d.ts', 'archive/**'],
   },
-  js.configs.recommended,
-  tseslint.configs.recommendedTypeChecked,
   {
+    files: ['**/*.{ts,tsx,mts,cts}'],
+    extends: [tseslint.configs.recommendedTypeCheckedOnly],
     languageOptions: {
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
     },
-    rules: {
-      '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
-    },
   },
   {
-    files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
-    extends: [tseslint.configs.disableTypeChecked],
-  },
-  {
-    // bun:test's matcher types treat `.rejects.toThrow()` as synchronous (void)
-    // and mock implementations are often `async () =>` without await by design.
-    files: ['**/test/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
+    // bun:test の型では `expect(...).rejects.toThrow()` が Promise を返さない（void）ため、
+    // `await` を付けると await-thenable が誤検知する。
+    files: ['apps/refrain/cli/test/**/*.ts'],
     rules: {
       '@typescript-eslint/await-thenable': 'off',
-      '@typescript-eslint/require-await': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off',
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unsafe-assignment': 'warn',
-      '@typescript-eslint/no-unsafe-member-access': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
-      '@typescript-eslint/no-unsafe-call': 'warn',
-      '@typescript-eslint/no-unsafe-return': 'warn',
     },
   },
 );

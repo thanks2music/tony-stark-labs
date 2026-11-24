@@ -29,21 +29,26 @@ export function computeNormalizedSize(info: PixelInfo): NormalizedSize | null {
   };
 }
 
-async function run(cmd: string[], opts: { capture: true }): Promise<string>;
-async function run(cmd: string[], opts?: { capture?: false }): Promise<void>;
-async function run(cmd: string[], opts?: { capture?: boolean }): Promise<string | void> {
-  const proc = Bun.spawn(cmd, {
-    stdout: opts?.capture ? 'pipe' : 'ignore',
-    stderr: 'ignore',
-  });
-  const [code, stdout] = await Promise.all([
-    proc.exited,
-    opts?.capture ? new Response(proc.stdout).text() : Promise.resolve(undefined),
-  ]);
-  if (code !== 0) {
-    throw new Error(`${cmd[0] ?? 'command'} exited with code ${code}`);
-  }
+/** Runs a command and throws if it exits non-zero. Output is discarded. */
+async function run(cmd: string[]): Promise<void> {
+  await spawnChecked(cmd, 'ignore').checked;
+}
+
+/** Runs a command, throws if it exits non-zero, and returns its stdout. */
+async function runCapture(cmd: string[]): Promise<string> {
+  const proc = spawnChecked(cmd, 'pipe');
+  const [stdout] = await Promise.all([new Response(proc.stdout).text(), proc.checked]);
   return stdout;
+}
+
+function spawnChecked<S extends 'pipe' | 'ignore'>(cmd: string[], stdout: S) {
+  const proc = Bun.spawn(cmd, { stdout, stderr: 'ignore' });
+  const checked = proc.exited.then((code) => {
+    if (code !== 0) {
+      throw new Error(`${cmd[0] ?? 'command'} exited with code ${code}`);
+    }
+  });
+  return Object.assign(proc, { checked });
 }
 
 export async function captureInteractive(): Promise<string> {
@@ -78,10 +83,18 @@ export async function normalizeDpi(path: string): Promise<void> {
 }
 
 async function readPixelInfo(path: string): Promise<PixelInfo> {
-  const output = await run(
-    ['sips', '-g', 'pixelWidth', '-g', 'pixelHeight', '-g', 'dpiWidth', '-g', 'dpiHeight', path],
-    { capture: true },
-  );
+  const output = await runCapture([
+    'sips',
+    '-g',
+    'pixelWidth',
+    '-g',
+    'pixelHeight',
+    '-g',
+    'dpiWidth',
+    '-g',
+    'dpiHeight',
+    path,
+  ]);
   return {
     pixelWidth: parseSipsValue(output, 'pixelWidth'),
     pixelHeight: parseSipsValue(output, 'pixelHeight'),
