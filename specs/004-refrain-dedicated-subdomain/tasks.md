@@ -15,12 +15,12 @@ Related: [spec.md](./spec.md), [plan.md](./plan.md)
 - [x] `bun run check` と `turbo run lint typecheck test` が通る
 - [x] `wrangler deploy --dry-run` が通る
 
-## 運用（リポジトリの外。PR のマージ前に済ませる）
+## 運用（リポジトリの外。PR #6 のマージ前に実施済み）
 
-- [ ] R2 バケット `refrain` を作る
-- [ ] `wrangler login` → 手元から初回デプロイ（`--domain`）
-- [ ] `UPLOAD_TOKEN` を生成して `wrangler secret put`。同じ値を `~/.config/refrain/token`（chmod 600）に置く
-- [ ] CI 用の API トークン（Workers Editor + zone の Workers Routes Write）を発行
-- [ ] GitHub の secrets（`CLOUDFLARE_API_TOKEN`・`CLOUDFLARE_ACCOUNT_ID`・`REFRAIN_DOMAIN`）を登録。旧 `REFRAIN_ROUTE` は作らない
-- [ ] `~/.config/refrain/config.json` の endpoint を `https://{DOMAIN}/upload` に
-- [ ] 疎通確認: 認証なしの POST が 401、CLI でのアップロードが 200 と Image URL、その URL の GET が画像を返す
+- [x] R2 バケット `refrain` を作る
+- [x] `wrangler login` → 手元から初回デプロイ（`--domain`）
+- [x] `UPLOAD_TOKEN` を生成して `wrangler secret put`。同じ値を `~/.config/refrain/token`（chmod 600）に置く
+- [x] CI 用の API トークン（Workers Editor + zone の Workers Routes Write）を発行
+- [x] GitHub の secrets（`CLOUDFLARE_API_TOKEN`・`CLOUDFLARE_ACCOUNT_ID`・`REFRAIN_DOMAIN`）を登録。旧 `REFRAIN_ROUTE` は作らない
+- [x] `~/.config/refrain/config.json` の endpoint を `https://{DOMAIN}/upload` に
+- [x] 疎通確認: 認証なしの POST が 401、CLI でのアップロードが 200 と Image URL、その URL の GET が画像を返す

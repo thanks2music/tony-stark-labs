@@ -26,7 +26,7 @@ bun run check && bun run lint && bun run typecheck && bun run test
 
 ## 開発手法（TDD + SDD）
 
-- **SDD**: 新機能は `specs/NNN-<slug>/` に `spec.md` → `plan.md` → `tasks.md` の順で起票してから実装する。軽微な修正（typo・依存更新・ログ追加）は spec を省略してよい
+- **SDD**: 新機能は `specs/NNN-<slug>/` に `spec.md` → `plan.md` → `tasks.md` の順で起票してから実装する。軽微な修正（typo・依存更新・ログ追加）は spec を省略してよい。`tasks.md` のチェックは、リポジトリの外の作業（デプロイや secrets の登録など）も含めて、PR をマージする前に更新する
 - **TDD**: Red（失敗するテストの commit）→ Green（実装の commit）→ Refactor の順に進める
 - 対象は `apps/` と `packages/`。`scripts/`（個人の作業用スクリプト）と `experiments/` は workspace に属さずテストの仕組みも無いので、SDD と TDD の対象外とする。変更したら、実際に動かして確かめる
 
