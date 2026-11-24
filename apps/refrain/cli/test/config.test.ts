@@ -167,9 +167,7 @@ describe('resolveEndpoint', () => {
 
 describe('parseEndpoint', () => {
   it('accepts an https URL and returns it unchanged', () => {
-    expect(parseEndpoint('https://shots.example.com/upload')).toBe(
-      'https://shots.example.com/upload',
-    );
+    expect(parseEndpoint('https://img.example.com/upload')).toBe('https://img.example.com/upload');
   });
 
   it('accepts http only for localhost and 127.0.0.1 (wrangler dev)', () => {
@@ -178,15 +176,20 @@ describe('parseEndpoint', () => {
   });
 
   it('rejects http for any other host, since the token would travel in plain text', () => {
-    expect(() => parseEndpoint('http://shots.example.com/upload')).toThrow(/https/);
+    expect(() => parseEndpoint('http://img.example.com/upload')).toThrow(/https/);
   });
 
   it('rejects a value that is not a URL', () => {
-    expect(() => parseEndpoint('shots.example.com/upload')).toThrow(/not a valid URL/);
+    expect(() => parseEndpoint('img.example.com/upload')).toThrow(/not a valid URL/);
   });
 
   it('rejects the {DOMAIN} placeholder left from the docs', () => {
     expect(() => parseEndpoint('https://{DOMAIN}/upload')).toThrow(/placeholder/);
+  });
+
+  it('rejects a path other than /upload, such as the old /apps/refrain/upload', () => {
+    expect(() => parseEndpoint('https://img.example.com/apps/refrain/upload')).toThrow(/\/upload/);
+    expect(() => parseEndpoint('https://img.example.com')).toThrow(/\/upload/);
   });
 
   it('rejects other schemes', () => {

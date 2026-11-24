@@ -85,6 +85,27 @@ describe('worker: POST /upload', () => {
     expect(res.status).toBe(413);
   });
 
+  it('411 when Content-Length is missing, so the size cannot be checked before reading', async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('--x--\r\n'));
+        controller.close();
+      },
+    });
+    const req = new Request(UPLOAD_URL, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${TOKEN}`,
+        'content-type': 'multipart/form-data; boundary=x',
+      },
+      body: stream,
+      duplex: 'half',
+    } as RequestInit);
+    expect(req.headers.get('content-length')).toBeNull();
+    const res = await dispatch(req);
+    expect(res.status).toBe(411);
+  });
+
   it('413 when the image is larger than the limit', async () => {
     const res = await dispatch(buildUploadRequest(TOKEN, pngOfSize(MAX_UPLOAD_BYTES + 1)));
     expect(res.status).toBe(413);
