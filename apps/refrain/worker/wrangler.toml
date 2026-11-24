@@ -2,15 +2,14 @@ name = "refrain"
 main = "src/index.ts"
 compatibility_date = "2026-04-18"
 
-# Workers の組み込みサブドメイン (<worker>.<subdomain>.workers.dev) は動作確認に使うので有効のまま。
-workers_dev = true
+# 本番は Workers Custom Domain（専用サブドメイン）だけで受ける。workers.dev とプレビュー URL は、
+# アップロード口が別のホスト名でも開いてしまうので無効にする。動作確認は `wrangler dev` で行う。
+workers_dev = false
+preview_urls = false
 
-# カスタムドメインの [[routes]] は**ここに書かない**。
-# 本リポジトリは Public のため、独自ドメインを設定ファイルに残さない方針。
-# デプロイ時に CLI フラグで注入する:
-#   wrangler deploy --routes "$REFRAIN_ROUTE"
-# CI では .github/workflows/deploy-refrain.yml が secrets.REFRAIN_ROUTE から渡す。
-# routes は workers_dev = true の場合は省略可能（wrangler の config schema 参照）。
+# Custom Domain は**ここに書かない**。本リポジトリは Public のため、ドメインを設定ファイルに残さない。
+# デプロイ時に CLI フラグで渡す（CI では .github/workflows/deploy-refrain.yml が secrets.REFRAIN_DOMAIN から渡す）:
+#   wrangler deploy --domain "$REFRAIN_DOMAIN"
 
 [[r2_buckets]]
 binding = "BUCKET"
