@@ -3,9 +3,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import {
-  assertUsableEndpoint,
   ENDPOINT_ENV_VAR,
   expandHome,
+  parseEndpoint,
   readConfig,
   readToken,
   resolveEndpoint,
@@ -121,8 +121,8 @@ describe('resolveEndpoint', () => {
   const ENV = ENDPOINT_ENV_VAR;
 
   it('returns the endpoint from the environment variable', () => {
-    expect(resolveEndpoint({ [ENV]: 'https://example.com/apps/refrain/upload' }, undefined)).toBe(
-      'https://example.com/apps/refrain/upload',
+    expect(resolveEndpoint({ [ENV]: 'https://example.com/upload' }, undefined)).toBe(
+      'https://example.com/upload',
     );
   });
 
@@ -155,22 +155,44 @@ describe('resolveEndpoint', () => {
   });
 
   it('rejects an endpoint from the environment that still has the {DOMAIN} placeholder', () => {
-    expect(() =>
-      resolveEndpoint({ [ENV]: 'https://{DOMAIN}/apps/refrain/upload' }, undefined),
-    ).toThrow(/\{DOMAIN\}/);
+    expect(() => resolveEndpoint({ [ENV]: 'https://{DOMAIN}/upload' }, undefined)).toThrow(
+      /placeholder/,
+    );
   });
 
-  it('rejects an endpoint from the config that still has the {DOMAIN} placeholder', () => {
-    expect(() => resolveEndpoint({}, 'https://{DOMAIN}/apps/refrain/upload')).toThrow(/\{DOMAIN\}/);
+  it('rejects an endpoint from the config that is not https', () => {
+    expect(() => resolveEndpoint({}, 'http://example.com/upload')).toThrow(/https/);
   });
 });
 
-describe('assertUsableEndpoint', () => {
-  it('returns the endpoint unchanged when it is usable', () => {
-    expect(assertUsableEndpoint('https://example.com/upload')).toBe('https://example.com/upload');
+describe('parseEndpoint', () => {
+  it('accepts an https URL and returns it unchanged', () => {
+    expect(parseEndpoint('https://img.example.com/upload')).toBe('https://img.example.com/upload');
   });
 
-  it('throws when the {DOMAIN} placeholder remains', () => {
-    expect(() => assertUsableEndpoint('https://{DOMAIN}/upload')).toThrow(/\{DOMAIN\}/);
+  it('accepts http only for localhost and 127.0.0.1 (wrangler dev)', () => {
+    expect(parseEndpoint('http://localhost:8787/upload')).toBe('http://localhost:8787/upload');
+    expect(parseEndpoint('http://127.0.0.1:8787/upload')).toBe('http://127.0.0.1:8787/upload');
+  });
+
+  it('rejects http for any other host, since the token would travel in plain text', () => {
+    expect(() => parseEndpoint('http://img.example.com/upload')).toThrow(/https/);
+  });
+
+  it('rejects a value that is not a URL', () => {
+    expect(() => parseEndpoint('img.example.com/upload')).toThrow(/not a valid URL/);
+  });
+
+  it('rejects the {DOMAIN} placeholder left from the docs', () => {
+    expect(() => parseEndpoint('https://{DOMAIN}/upload')).toThrow(/placeholder/);
+  });
+
+  it('rejects a path other than /upload, such as the old /apps/refrain/upload', () => {
+    expect(() => parseEndpoint('https://img.example.com/apps/refrain/upload')).toThrow(/\/upload/);
+    expect(() => parseEndpoint('https://img.example.com')).toThrow(/\/upload/);
+  });
+
+  it('rejects other schemes', () => {
+    expect(() => parseEndpoint('ftp://example.com/upload')).toThrow(/https/);
   });
 });

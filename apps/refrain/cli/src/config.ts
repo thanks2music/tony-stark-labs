@@ -20,14 +20,40 @@ export const DEFAULT_TOKEN_PATH = join(DEFAULT_CONFIG_DIR, 'token');
  */
 export const ENDPOINT_ENV_VAR = 'REFRAIN_ENDPOINT';
 
-/** Rejects an endpoint that still carries the `{DOMAIN}` placeholder. */
-export function assertUsableEndpoint(endpoint: string): string {
-  if (endpoint.includes('{DOMAIN}')) {
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
+// The Worker's upload route. Older configs pointed at /apps/refrain/upload.
+const UPLOAD_PATH = '/upload';
+
+/**
+ * Validates the upload endpoint and returns it unchanged.
+ *
+ * It must be an `https:` URL, because the upload token travels in the request
+ * header. `http:` is allowed only for `localhost` and `127.0.0.1`, so that
+ * `wrangler dev` still works. URL parsing accepts `{DOMAIN}` as a hostname, so the
+ * placeholder left from the docs is rejected by an explicit brace check.
+ */
+export function parseEndpoint(raw: string): string {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error(`endpoint is not a valid URL: ${raw}`);
+  }
+  if (url.hostname.includes('{') || url.hostname.includes('}')) {
+    throw new Error(`endpoint still contains a placeholder: ${raw}`);
+  }
+  const isLocalHttp = url.protocol === 'http:' && LOCAL_HOSTS.has(url.hostname);
+  if (url.protocol !== 'https:' && !isLocalHttp) {
     throw new Error(
-      'endpoint still contains the "{DOMAIN}" placeholder — replace it with your actual Worker URL (e.g. https://example.com/apps/refrain/upload).',
+      `endpoint must use https (http is allowed only for localhost and 127.0.0.1): ${raw}`,
     );
   }
-  return endpoint;
+  if (url.pathname !== UPLOAD_PATH) {
+    throw new Error(
+      `endpoint path must be ${UPLOAD_PATH} (e.g. https://<host>${UPLOAD_PATH}): ${raw}`,
+    );
+  }
+  return raw;
 }
 
 /**
@@ -43,7 +69,7 @@ export function resolveEndpoint(
 ): string | null {
   for (const candidate of [env[ENDPOINT_ENV_VAR], configEndpoint]) {
     const trimmed = candidate?.trim();
-    if (trimmed !== undefined && trimmed !== '') return assertUsableEndpoint(trimmed);
+    if (trimmed !== undefined && trimmed !== '') return parseEndpoint(trimmed);
   }
   return null;
 }

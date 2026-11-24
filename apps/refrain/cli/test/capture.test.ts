@@ -73,6 +73,28 @@ describe('computeNormalizedSize', () => {
     expect(result).toEqual({ width: 1080, height: 720 });
   });
 
+  it('rounds fractional sizes to whole pixels for sips -z', () => {
+    expect(
+      computeNormalizedSize({
+        pixelWidth: 1235,
+        pixelHeight: 801,
+        dpiWidth: 144,
+        dpiHeight: 144,
+      }),
+    ).toEqual({ width: 618, height: 401 });
+  });
+
+  it('never rounds a side down to 0 pixels, which sips -z rejects', () => {
+    expect(
+      computeNormalizedSize({
+        pixelWidth: 1,
+        pixelHeight: 400,
+        dpiWidth: 216,
+        dpiHeight: 216,
+      }),
+    ).toEqual({ width: 1, height: 133 });
+  });
+
   it('handles asymmetric DPI on each axis', () => {
     expect(
       computeNormalizedSize({

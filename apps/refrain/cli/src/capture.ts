@@ -24,8 +24,9 @@ export function parseSipsValue(output: string, property: string): number {
 export function computeNormalizedSize(info: PixelInfo): NormalizedSize | null {
   if (info.dpiWidth <= 72 || info.dpiHeight <= 72) return null;
   return {
-    width: (info.pixelWidth * 72) / info.dpiWidth,
-    height: (info.pixelHeight * 72) / info.dpiHeight,
+    // sips -z takes whole pixels and rejects 0.
+    width: Math.max(1, Math.round((info.pixelWidth * 72) / info.dpiWidth)),
+    height: Math.max(1, Math.round((info.pixelHeight * 72) / info.dpiHeight)),
   };
 }
 

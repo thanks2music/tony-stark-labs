@@ -27,17 +27,15 @@ describe('uploadImage', () => {
 
   it('returns the trimmed URL on 200', async () => {
     stubFetch(() =>
-      Promise.resolve(
-        new Response('https://example.test/apps/refrain/i/abc.png\n', { status: 200 }),
-      ),
+      Promise.resolve(new Response('https://example.test/i/abc.png\n', { status: 200 })),
     );
 
     const url = await uploadImage({
       filePath: imagePath,
-      endpoint: 'https://example.test/apps/refrain/upload',
+      endpoint: 'https://example.test/upload',
       token: 'my-token',
     });
-    expect(url).toBe('https://example.test/apps/refrain/i/abc.png');
+    expect(url).toBe('https://example.test/i/abc.png');
   });
 
   it('sends the Bearer token and a multipart imagedata Blob with the source filename', async () => {
