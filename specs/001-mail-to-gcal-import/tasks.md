@@ -14,9 +14,9 @@
 
 ### Step 1: subtree add
 
-- [x] `cd /Users/yoshi/work/dev/my-projects/tony-stark-labs`
+- [x] `cd <tony-stark-labs のクローン先>`
 - [x] `git pull --ff-only origin main`
-- [x] `git subtree add --prefix=apps/mail-to-gcal file:///Users/yoshi/work/dev/my-projects/mail-to-google-calendar main --squash -m "..."`
+- [x] `git subtree add --prefix=apps/mail-to-gcal file://<mail-to-google-calendar のクローン先> main --squash -m "..."`
 - [x] 検証: 機密ファイルが混入していないこと
 
 ### Step 2: 個別 bun.lock 削除

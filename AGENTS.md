@@ -82,7 +82,7 @@ bun run lint && bun run format:check && bun run typecheck && bun run test
 
 ## アーカイブ
 
-`archive/` には運用を止めたアプリを当時のまま置いている。workspace・CI・lint・format の対象外で、コードを変更しない。ほかのアプリを実装するときの参考や基準にもしない。
+`archive/` には運用を止めたアプリを当時のまま置いている。workspace・CI・lint・format の対象外で、コードを変更しない（例外は、公開リポジトリに残してはいけない識別子の除去だけ）。ほかのアプリを実装するときの参考や基準にもしない。
 
 ## アプリの取り込み
 

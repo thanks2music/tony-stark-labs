@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy:process": "gcloud functions deploy processEmail --gen2 --runtime=nodejs22 --region=asia-northeast1 --trigger-topic=gmail-notifications --entry-point=processEmail --source=. --memory=256Mi --timeout=60s --set-secrets=OAUTH_CREDENTIALS=oauth-credentials:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest --set-env-vars=GOOGLE_CALENDAR_ID=$GOOGLE_CALENDAR_ID",
+    "deploy:process": "gcloud functions deploy processEmail --gen2 --runtime=nodejs22 --region=asia-northeast1 --trigger-topic=gmail-notifications --entry-point=processEmail --source=. --memory=256Mi --timeout=60s --set-secrets=OAUTH_CREDENTIALS=oauth-credentials:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest --set-env-vars=GOOGLE_CALENDAR_ID=${GOOGLE_CALENDAR_ID:?set GOOGLE_CALENDAR_ID}",
     "deploy:renew": "gcloud functions deploy renewWatch --gen2 --runtime=nodejs22 --region=asia-northeast1 --trigger-http --no-allow-unauthenticated --entry-point=renewWatch --source=. --memory=256Mi --timeout=30s --set-secrets=OAUTH_CREDENTIALS=oauth-credentials:latest"
   },
   "dependencies": {

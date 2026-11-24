@@ -42,7 +42,7 @@ Next phase: [specs/002-mail-to-gcal-gcp-migration/spec.md](../002-mail-to-gcal-g
 - ルート `package.json`（devDependencies 昇格）
 - `eslint.config.js`（override 追加）
 - `bun.lock`（再生成）
-- 独立リポジトリ `/Users/yoshi/work/dev/my-projects/mail-to-google-calendar`（本 Phase では無変更。Phase 1b で移行後に archive 検討）
+- 独立リポジトリ `mail-to-google-calendar`（本 Phase では無変更。Phase 1b で移行後に archive 検討）
 
 ## 前提条件
 
