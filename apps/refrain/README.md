@@ -5,9 +5,7 @@
 - **Phase 1（個人用）**: Cloudflare Workers + R2 + Bun CLI (macOS)
 - **Phase 2（会社用）**: AWS S3 へストレージを切替可能な抽象化を前提とした設計
 
-> **`{DOMAIN}` について**: 本リポジトリは Public のため、実ドメインをソース・設定・ドキュメントのいずれにも記載しない。ドキュメント中の `{DOMAIN}` は読み替えること。`{DOMAIN}` は Refrain 専用のホスト名（サブドメイン）を指す。実値の供給経路は CLI が `REFRAIN_ENDPOINT` 環境変数か `~/.config/refrain/config.json`、Worker が deploy 時の `--domain` フラグ（CI では `secrets.REFRAIN_DOMAIN`）。
->
-> なお、これは「リポジトリに書かない」という運用上の配慮であり秘匿性は得られない。画像 URL を外部に貼れば第三者にドメインは見える。アップロード経路を守るのは `UPLOAD_TOKEN` のみである。
+> **`{DOMAIN}` について**: Refrain 専用のホスト名（サブドメイン）に読み替える。本リポジトリは Public のため実値は書かず、Worker には deploy 時の `--domain`、CLI には `REFRAIN_ENDPOINT` か `~/.config/refrain/config.json` で渡す。理由と、これが秘匿にはならない点は [ADR 0001](./docs/adr/0001-keep-the-domain-out-of-the-repository.md)。
 
 [Gyazo 公式の OSS クライアント群](https://github.com/gyazo) は DPI 正規化ロジックやハッシュによる content-addressable URL 設計を参考にするのみで、クライアント／サーバーとも新規実装する。既存 Gyazo アプリとのプロトコル互換性は持たない。
 
@@ -129,7 +127,7 @@ refrain --no-copy          # pbcopy にコピーしない
 2. `~/.config/refrain/config.json` の `endpoint`
 3. 対話プロンプト（どちらも無い場合。入力値は config.json に保存される）
 
-環境変数が設定されている場合は config.json を書き換えずにそちらが優先される。どの経路でも、`https:` の URL でない値は拒否される（`http:` は `wrangler dev` 用に `localhost`・`127.0.0.1` だけ許す）。`{DOMAIN}` プレースホルダが残った値もここで拒否される。
+環境変数が設定されている場合は config.json を書き換えずにそちらが優先される。どの経路でも、`https:` の URL でない値は拒否される（`http:` は `wrangler dev` 用に `localhost`・`127.0.0.1` だけ許す）。
 
 処理フロー:
 

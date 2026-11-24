@@ -76,12 +76,8 @@ bun run check && bun run lint && bun run typecheck && bun run test
 ## 公開リポジトリとしての注意
 
 - `.env` や機密値をコミットしない。`.gitignore` を信頼する前に、ファイルの中身を確かめる
-- アプリを載せる独自ドメインとホスト名は、ソース・設定・ドキュメントのどこにも書かない。ドキュメントでは `{DOMAIN}` プレースホルダのままにする（[refrain の ADR](./apps/refrain/docs/adr/0001-keep-the-domain-out-of-the-repository.md)）
-  - アプリは 1 つにつき専用のサブドメインを 1 つ使い、パスにアプリ名の前置きを付けない（[ADR 0002](./docs/adr/0002-one-subdomain-per-app.md)）
-  - `apps/refrain/worker/wrangler.toml` は追跡しているが Custom Domain（`[[routes]]`）を持たない。ホスト名は deploy 時に `wrangler deploy --domain "$REFRAIN_DOMAIN"` で渡す
-  - CI では `.github/workflows/deploy-refrain.yml` が `secrets.REFRAIN_DOMAIN` から渡す。**`vars` は使わない**（ワークフローのログに平文で出るため）
-  - CLI のエンドポイントは、`REFRAIN_ENDPOINT` 環境変数 → `~/.config/refrain/config.json` → 対話プロンプトの順で解決する。コンパイル時の既定値は持たない
-  - これは運用上の配慮で、**秘匿性は得られない**（画像の URL を外に貼れば露出する）。アップロードを守っているのは `UPLOAD_TOKEN` だけ
+- アプリを載せる独自ドメインとホスト名は、ソース・設定（`wrangler.toml` を含む）・ドキュメントのどこにも書かない。ドキュメントでは `{DOMAIN}` プレースホルダのままにし、デプロイ時に GitHub Actions の **`secrets`**（`vars` ではない）から渡す。理由と渡し方は [refrain の ADR 0001](./apps/refrain/docs/adr/0001-keep-the-domain-out-of-the-repository.md)
+- アプリは 1 つにつき専用のサブドメインを 1 つ使い、パスにアプリ名の前置きを付けない（[ADR 0002](./docs/adr/0002-one-subdomain-per-app.md)）
 - `docs/plan/`（設計メモ）と `**/docs/report/`（セッションの作業報告）は gitignore している。コミットしない
 - `experiments/` は、各ディレクトリの `README.md` だけを追跡する。素材や成果物はコミットしない
 

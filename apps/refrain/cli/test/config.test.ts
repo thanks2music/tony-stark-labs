@@ -156,7 +156,7 @@ describe('resolveEndpoint', () => {
 
   it('rejects an endpoint from the environment that still has the {DOMAIN} placeholder', () => {
     expect(() => resolveEndpoint({ [ENV]: 'https://{DOMAIN}/upload' }, undefined)).toThrow(
-      /endpoint/,
+      /placeholder/,
     );
   });
 
@@ -186,7 +186,7 @@ describe('parseEndpoint', () => {
   });
 
   it('rejects the {DOMAIN} placeholder left from the docs', () => {
-    expect(() => parseEndpoint('https://{DOMAIN}/upload')).toThrow(/endpoint/);
+    expect(() => parseEndpoint('https://{DOMAIN}/upload')).toThrow(/placeholder/);
   });
 
   it('rejects other schemes', () => {

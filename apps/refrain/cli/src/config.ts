@@ -27,8 +27,8 @@ const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
  *
  * It must be an `https:` URL, because the upload token travels in the request
  * header. `http:` is allowed only for `localhost` and `127.0.0.1`, so that
- * `wrangler dev` still works. The `{DOMAIN}` placeholder from the docs fails the
- * URL check too.
+ * `wrangler dev` still works. URL parsing accepts `{DOMAIN}` as a hostname, so the
+ * placeholder left from the docs is rejected by an explicit brace check.
  */
 export function parseEndpoint(raw: string): string {
   let url: URL;
