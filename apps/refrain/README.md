@@ -192,6 +192,8 @@ mkdir -p ~/bin
 mv apps/refrain/cli/dist/refrain ~/bin/
 ```
 
+`build` は、`bun build --compile` の後に `codesign --force --sign -` で ad-hoc 署名をかけ直す。`bun build --compile` が出力したバイナリは署名が無効（`codesign -v` が `invalid signature`）で、macOS が起動時に `SIGKILL`（exit 137）で止めるためである。手で `bun build --compile` を実行した場合も、`codesign --force --sign - <バイナリ>` を忘れずに実行する。
+
 初回起動時にエンドポイントとトークンパスを対話で聞かれる。プロンプトを出したくない場合は環境変数を使う:
 
 ```bash
