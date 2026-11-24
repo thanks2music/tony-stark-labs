@@ -7,4 +7,4 @@
 ## Consequences
 
 - secret は `vars` ではなく `secrets` に置く。`vars` はワークフローのログに平文で出る
-- ホスト名を変えるときは、`REFRAIN_DOMAIN` の secret と、各 Mac の `~/.config/refrain/config.json` を両方変える
+- ホスト名を変えるときは、`REFRAIN_DOMAIN` の secret と、各 Mac の `~/.config/refrain/config.json` を両方変える。`--domain` は Custom Domain を追加するだけで、古いものは消さない（`wrangler.toml` に宣言していないため）。古い Custom Domain は Cloudflare のダッシュボード（Worker の Settings > Domains & Routes）で消す
