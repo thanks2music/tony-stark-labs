@@ -18,6 +18,7 @@ Related: [spec.md](./spec.md), [plan.md](./plan.md)
 - [ ] `gcloud projects create tony-stark-labs --name="Tony Stark Labs"`（CEO）
 - [ ] Billing account を link（CEO、Console で手動）
 - [ ] 必要 API を一括 enable:
+
   ```bash
   gcloud services enable \
     cloudfunctions.googleapis.com \
@@ -41,6 +42,7 @@ Related: [spec.md](./spec.md), [plan.md](./plan.md)
 
 - [ ] `gcloud pubsub topics create gmail-notifications --project=tony-stark-labs`
 - [ ] Gmail API service account (`gmail-api-push@system.gserviceaccount.com`) に publisher 権限付与:
+
   ```bash
   gcloud pubsub topics add-iam-policy-binding gmail-notifications \
     --member=serviceAccount:gmail-api-push@system.gserviceaccount.com \
@@ -152,6 +154,7 @@ Related: [spec.md](./spec.md), [plan.md](./plan.md)
 **完了条件**:
 
 - [ ] `processEmail.ts` の `console.log('Gmail通知受信:', decoded)` を構造化ログに変更
+
   ```ts
   const parsed = PubSubPayloadSchema.safeParse(decoded);
   if (parsed.success) {

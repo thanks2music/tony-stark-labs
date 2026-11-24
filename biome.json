@@ -1,0 +1,35 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "includes": ["**", "!!**/archive", "!!.husky/_", "!**/worker-configuration.d.ts"]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingCommas": "all",
+      "semicolons": "always",
+      "arrowParentheses": "always"
+    }
+  },
+  "yaml": {
+    "formatter": { "quoteStyle": "single", "bracketSpacing": false }
+  },
+  "linter": {
+    "rules": {
+      "preset": "recommended",
+      "style": {
+        "useImportType": "error"
+      }
+    }
+  },
+  "assist": {
+    "actions": { "source": { "organizeImports": "on" } }
+  }
+}

@@ -26,8 +26,10 @@ describe('uploadImage', () => {
   });
 
   it('returns the trimmed URL on 200', async () => {
-    stubFetch(
-      async () => new Response('https://example.test/apps/refrain/i/abc.png\n', { status: 200 }),
+    stubFetch(() =>
+      Promise.resolve(
+        new Response('https://example.test/apps/refrain/i/abc.png\n', { status: 200 }),
+      ),
     );
 
     const url = await uploadImage({
@@ -39,7 +41,7 @@ describe('uploadImage', () => {
   });
 
   it('sends the Bearer token and a multipart imagedata Blob with the source filename', async () => {
-    const spy = mock(async (_url: string | URL | Request, init?: RequestInit) => {
+    const spy = mock((_url: string | URL | Request, init?: RequestInit) => {
       const headers = new Headers(init?.headers);
       expect(headers.get('authorization')).toBe('Bearer mytoken');
 
@@ -49,7 +51,7 @@ describe('uploadImage', () => {
       expect(imagedata).toBeInstanceOf(Blob);
       expect((imagedata as File).name).toBe('screenshot.png');
 
-      return new Response('https://out', { status: 200 });
+      return Promise.resolve(new Response('https://out', { status: 200 }));
     });
     globalThis.fetch = spy as unknown as typeof fetch;
 
@@ -62,8 +64,8 @@ describe('uploadImage', () => {
   });
 
   it('throws with status and body detail on non-2xx', async () => {
-    stubFetch(
-      async () => new Response('Unauthorized\n', { status: 401, statusText: 'Unauthorized' }),
+    stubFetch(() =>
+      Promise.resolve(new Response('Unauthorized\n', { status: 401, statusText: 'Unauthorized' })),
     );
 
     await expect(
@@ -72,7 +74,7 @@ describe('uploadImage', () => {
   });
 
   it('omits the body suffix when the response body is empty', async () => {
-    stubFetch(async () => new Response('', { status: 500, statusText: 'Server Error' }));
+    stubFetch(() => Promise.resolve(new Response('', { status: 500, statusText: 'Server Error' })));
 
     await expect(
       uploadImage({ filePath: imagePath, endpoint: 'https://e/upload', token: 't' }),

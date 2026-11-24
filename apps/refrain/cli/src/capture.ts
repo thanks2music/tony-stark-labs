@@ -30,8 +30,8 @@ export function computeNormalizedSize(info: PixelInfo): NormalizedSize | null {
 }
 
 async function run(cmd: string[], opts: { capture: true }): Promise<string>;
-async function run(cmd: string[], opts?: { capture?: false }): Promise<void>;
-async function run(cmd: string[], opts?: { capture?: boolean }): Promise<string | void> {
+async function run(cmd: string[], opts?: { capture?: false }): Promise<undefined>;
+async function run(cmd: string[], opts?: { capture?: boolean }): Promise<string | undefined> {
   const proc = Bun.spawn(cmd, {
     stdout: opts?.capture ? 'pipe' : 'ignore',
     stderr: 'ignore',
