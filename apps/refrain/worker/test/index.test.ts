@@ -119,6 +119,19 @@ describe('worker: POST /upload', () => {
     expect(res.status).toBe(411);
   });
 
+  it.each(['abc', '-1', '1.5'])('400 when Content-Length is %s', async (value) => {
+    const valid = await buildUploadRequest(TOKEN);
+    const headers = new Headers(valid.headers);
+    headers.set('content-length', value);
+    const req = new Request(UPLOAD_URL, {
+      method: 'POST',
+      headers,
+      body: await valid.arrayBuffer(),
+    });
+    const res = await dispatch(req);
+    expect(res.status).toBe(400);
+  });
+
   it('413 when the image is larger than the limit', async () => {
     const res = await dispatch(await buildUploadRequest(TOKEN, pngOfSize(MAX_UPLOAD_BYTES + 1)));
     expect(res.status).toBe(413);
